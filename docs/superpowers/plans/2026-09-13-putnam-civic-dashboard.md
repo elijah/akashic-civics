@@ -111,8 +111,8 @@ The existing `scraper.ts` is a stub. Implement real scraping for:
 - `akashic-reddit-cookeville-connector/lib/` - Add pipeline-compatible transform
 - Data-pipeline connector registry
 
-- [x] **Step 1.4.1:** Add transform to pipeline format
-- [x] **Step 1.4.2:** Register in connector registry
+- [ ] **Step 1.4.1:** Add transform to pipeline format
+- [ ] **Step 1.4.2:** Register in connector registry
 
 ---
 
@@ -122,8 +122,8 @@ The existing `scraper.ts` is a stub. Implement real scraping for:
 - `akashic-news-source-connector/lib/` - Add pipeline-compatible transform
 - Data-pipeline connector registry
 
-- [x] **Step 1.5.1:** Add transform for Herald-Citizen + gov meeting RSS
-- [x] **Step 1.5.2:** Register in connector registry
+- [ ] **Step 1.5.1:** Add transform for Herald-Citizen + gov meeting RSS
+- [ ] **Step 1.5.2:** Register in connector registry
 
 ---
 
@@ -139,9 +139,9 @@ The existing `scraper.ts` is a stub. Implement real scraping for:
 - Planning Commission meetings
 
 **Implementation:**
-- [x] **Step 2.1.1:** Add RSS/API endpoints to news-source-connector
-- [x] **Step 2.1.2:** Create meeting parser for agenda/minutes PDFs
-- [x] **Step 2.1.3:** Extract action items, votes, attendees as structured data
+- [ ] **Step 2.1.1:** Add RSS/API endpoints to news-source-connector
+- [ ] **Step 2.1.2:** Create meeting parser for agenda/minutes PDFs
+- [ ] **Step 2.1.3:** Extract action items, votes, attendees as structured data
 
 ---
 
@@ -181,8 +181,8 @@ The existing `scraper.ts` is a stub. Implement real scraping for:
 - Subdivision plats
 
 **Implementation:**
-- [x] **Step 2.4.1:** Add permit data source
-- [x] **Step 2.4.2:** Map to infrastructure/asset events
+- [ ] **Step 2.4.1:** Add permit data source
+- [ ] **Step 2.4.2:** Map to infrastructure/asset events
 
 ---
 
@@ -193,8 +193,8 @@ The existing `scraper.ts` is a stub. Implement real scraping for:
 - Campaign finance filings
 
 **Implementation:**
-- [x] **Step 2.5.1:** Add election results feed
-- [x] **Step 2.5.2:** Add campaign finance tracking
+- [ ] **Step 2.5.1:** Add election results feed
+- [ ] **Step 2.5.2:** Add campaign finance tracking
 
 ---
 
