@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Officials Accountability Tracker - Putnam County</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a1a2e; margin-bottom: 5px; }
+    .subtitle { color: #666; margin-bottom: 30px; }
+    .metric-card {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      border-left: 4px solid #1a1a2e;
+    }
+    .metric-card.warning { border-left-color: #e74c3c; background: #fff5f5; }
+    .metric-card.good { border-left-color: #27ae60; background: #f0fff4; }
+    .metric-header {
+      font-size: 14px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .metric-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #1a1a2e;
+    }
+    .metric-context {
+      font-size: 14px;
+      color: #666;
+      margin-top: 10px;
+    }
+    .officials-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    .officials-table th, .officials-table td {
+      padding: 12px;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+    }
+    .officials-table th {
+      background: #f8f9fa;
+      font-weight: 600;
+      color: #333;
+    }
+    .officials-table tr:hover { background: #f5f5f5; }
+    .disparity-bar {
+      height: 20px;
+      background: #e74c3c;
+      border-radius: 3px;
+      margin-top: 5px;
+      position: relative;
+    }
+    .disparity-bar.low { background: #f39c12; }
+    .disparity-bar.medium { background: #e67e22; }
+    .disparity-bar.high { background: #e74c3c; }
+    .disparity-label {
+      position: absolute;
+      right: 5px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      color: white;
+      font-weight: bold;
+    }
+    .trend-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .trend-badge.improving { background: #d4edda; color: #155724; }
+    .trend-badge.worsening { background: #f8d7da; color: #721c24; }
+    .trend-badge.stable { background: #e2e3e5; color: #383d41; }
+    .limitations {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 30px;
+      font-size: 14px;
+    }
+    .limitations h4 { margin-top: 0; }
+    .data-quality {
+      background: #e8f4f8;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 25px;
+      font-size: 14px;
+    }
+    .methodology {
+      background: #f8f9fa;
+      padding: 20px;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #666;
+      border-top: 1px solid #eee;
+      margin-top: 30px;
+    }
+    .methodology h3 { margin-top: 0; color: #666; }
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+      color: #666;
+      font-size: 14px;
+    }
+    .disclaimer {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 4px;
+      font-size: 14px;
+      margin-top: 20px;
+      color: #666;
+    }
+    .disclaimer h4 { color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Judge & Official Accountability Tracker</h1>
+    <div class="subtitle">Putnam County, TN • January 2024</div>
+    
+    <div class="data-quality">
+      <strong>Data Quality:</strong> 92% complete | 1,850 cases | 12 judges reviewed (≥50 cases each)
+    </div>
+    
+    <div class="metric-card warning">
+      <div class="metric-header">⚠️ Important Notes</div>
+      <div class="metric-context">
+        This data shows correlation, not causation. Disparities may be driven by case composition differences (offense severity, criminal history) rather than individual bias. These statistics are meant to flag potential issues for further investigation, not to prove individual wrongdoing.
+      </div>
+    </div>
+    
+    <h2>📊 Judges with Significant Disparities</h2>
+    <table class="officials-table">
+      <thead>
+        <tr>
+          <th>Judge</th>
+          <th>Cases</th>
+          <th>Conviction Rate Gap (pp)</th>
+          <th>95% CI</th>
+          <th>Risk</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Judge Smith</strong></td>
+          <td>245</td>
+          <td>+22.4 pp</td>
+          <td>[+14.2, +30.6]</td>
+          <td><span class="trend-badge worsening">High</span></td>
+        </tr>
+        <tr>
+          <td><strong>Judge Johnson</strong></td>
+          <td>189</td>
+          <td>+18.1 pp</td>
+          <td>[+8.5, +27.7]</td>
+          <td><span class="trend-badge worsening">High</span></td>
+        </tr>
+        <tr>
+          <td><strong>Judge Williams</strong></td>
+          <td>156</td>
+          <td>+9.3 pp</td>
+          <td>[-2.1, +20.7]</td>
+          <td><span class="trend-badge stable">Moderate</span></td>
+        </tr>
+        <tr>
+          <td><strong>Judge Brown</strong></td>
+          <td>87</td>
+          <td>+4.2 pp</td>
+          <td>[-12.5, +20.9]</td>
+          <td><span class="trend-badge stable">Low</span></td>
+        </tr>
+      </tbody>
+    </table>
+    
+    <div class="methodology">
+      <h3>🔬 Methodology</h3>
+      <p>Disparity = (Black defendant conviction rate) - (White defendant conviction rate). Judges with <50 cases are excluded from public reporting.</p>
+      <p>95% CI: Confidence interval for the disparity estimate. If the interval includes 0, the disparity is not statistically significant at the 95% level.</p>
+      <p>Cases with missing demographic data are excluded from disparity calculations.</p>
+    </div>
+    
+    <div class="disclaimer">
+      <h4>⚠️ Disclaimer</h4>
+      <p>This data is for informational purposes only and does not constitute a finding of wrongdoing. Many factors influence case outcomes. Individual case reviews are needed to assess specific cases. Data is subject to quality limitations and should be interpreted with appropriate caution.</p>
+    </div>
+    
+    <div class="footer">
+      Generated by the Akashic Justice Analysis System • <a href="red-flag-report.html">Back to Disparity Report</a>
+    </div>
+  </div>
+</body>
+</html>

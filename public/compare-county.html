@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Akashic Justice - Compare Your County</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #1a1a2e; margin-bottom: 10px; }
+    .subtitle { color: #666; margin-bottom: 30px; }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+    label { display: block; margin-bottom: 5px; font-weight: 600; color: #333; }
+    select, input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+    }
+    button {
+      background: #1a1a2e;
+      color: white;
+      padding: 12px 30px;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      grid-column: 1 / -1;
+      width: 100%;
+    }
+    button:hover { background: #0f0f1a; }
+    .results {
+      margin-top: 30px;
+      display: none;
+    }
+    .metric-card {
+      background: #f8f9fa;
+      border-left: 4px solid #1a1a2e;
+      padding: 20px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+    }
+    .metric-card.warning { border-left-color: #e74c3c; background: #fff5f5; }
+    .metric-card.good { border-left-color: #27ae60; background: #f0fff4; }
+    .metric-header {
+      font-size: 14px;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+    .metric-value {
+      font-size: 32px;
+      font-weight: bold;
+      color: #1a1a2e;
+    }
+    .metric-comparison {
+      font-size: 14px;
+      color: #666;
+      margin-top: 10px;
+    }
+    .trend {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .trend.improving { background: #d4edda; color: #155724; }
+    .trend.worsening { background: #f8d7da; color: #721c24; }
+    .trend.stable { background: #e2e3e5; color: #383d41; }
+    .limitations {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 20px;
+      font-size: 14px;
+    }
+    .limitations h4 { margin-top: 0; }
+    .data-quality {
+      background: #e8f4f8;
+      padding: 15px;
+      border-radius: 4px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+    .chart-placeholder {
+      background: #f8f9fa;
+      border: 2px dashed #dee2e6;
+      padding: 40px;
+      text-align: center;
+      border-radius: 4px;
+      margin-top: 20px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Compare Your County</h1>
+    <p class="subtitle">See how your local justice system compares to peers and state averages</p>
+    
+    <div class="controls">
+      <div>
+        <label for="county">Select Your County:</label>
+        <select id="county">
+          <option value="">Loading counties...</option>
+        </select>
+      </div>
+      <div>
+        <label for="metric">Select Metric:</label>
+        <select id="metric">
+          <option value="conviction_gap">Conviction Rate Gap</option>
+          <option value="sentence_gap">Sentence Length Gap</option>
+          <option value="dismissal_rate">Dismissal Rate</option>
+          <option value="processing_time">Days to Disposition</option>
+        </select>
+      </div>
+      <div>
+        <label for="year">Year:</label>
+        <select id="year">
+          <option value="2023">2023</option>
+          <option value="2022">2022</option>
+          <option value="2021">2021</option>
+          <option value="2020">2020</option>
+        </select>
+      </div>
+      <div>
+        <label for="group">Compare Group:</label>
+        <select id="group">
+          <option value="race_ethnicity">Race/Ethnicity</option>
+          <option value="gender">Gender</option>
+          <option value="age_group">Age Group</option>
+        </select>
+      </div>
+      <button onclick="runComparison()">Compare My County</button>
+    </div>
+
+    <div class="results" id="results">
+      <div class="data-quality" id="data-quality"></div>
+      
+      <div class="metric-card" id="gap-card">
+        <div class="metric-header">Disparity Gap</div>
+        <div class="metric-value" id="gap-value">--</div>
+        <div class="metric-comparison" id="gap-comparison"></div>
+        <span class="trend" id="trend-badge">--</span>
+      </div>
+
+      <div class="metric-card" id="reference-card">
+        <div class="metric-header">Comparison to State Average</div>
+        <div class="metric-value" id="state-gap">--</div>
+        <div class="metric-comparison" id="state-comparison"></div>
+      </div>
+
+      <div class="metric-card" id="peer-card">
+        <div class="metric-header">Compared to Peer Counties</div>
+        <div class="metric-value" id="peer-ranking">--</div>
+        <div class="metric-comparison" id="peer-comparison"></div>
+      </div>
+
+      <div class="chart-placeholder" id="chart">
+        Chart would render here in a full implementation
+      </div>
+
+      <div class="limitations">
+        <h4>⚠️ Limitations & Disclaimer</h4>
+        <p id="limitations-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Mock data for demonstration (would be replaced with real API data)
+    const countyData = {
+      'Putnam County, TN': {
+        conviction_gap: 0.16,  // 16 percentage points
+        state_avg: 0.08,
+        peer_avg: 0.12,
+        peer_ranking: 15,
+        total_peers: 50,
+        trend: 'worsening',
+        trend_pct: 3.2,
+        data_quality: 92,
+        case_count: 1850,
+        years_covered: 3
+      },
+      'Marion County, TN': {
+        conviction_gap: 0.09,
+        state_avg: 0.08,
+        peer_avg: 0.12,
+        peer_ranking: 35,
+        total_peers: 50,
+        trend: 'improving',
+        trend_pct: -2.1,
+        data_quality: 88,
+        case_count: 1200,
+        years_covered: 3
+      }
+    };
+
+    // Initialize county dropdown
+    const countySelect = document.getElementById('county');
+    countySelect.innerHTML = '<option value="Putnam County, TN">Putnam County, TN</option>' +
+      '<option value="Marion County, TN">Marion County, TN</option>' +
+      '<option value="Hamilton County, TN">Hamilton County, TN</option>';
+
+    async function runComparison() {
+      const county = document.getElementById('county').value;
+      const metric = document.getElementById('metric').value;
+      const year = document.getElementById('year').value;
+      const group = document.getElementById('group').value;
+
+      if (!county) {
+        alert('Please select a county');
+        return;
+      }
+
+      // Show loading state
+      document.getElementById('results').style.display = 'none';
+
+      // Simulate API call (would be fetch() in production)
+      const data = countyData[county] || countyData['Putnam County, TN'];
+
+      // Update UI
+      document.getElementById('results').style.display = 'block';
+
+      // Data quality
+      document.getElementById('data-quality').innerHTML = `
+        <strong>Data Quality:</strong> ${data.data_quality}% complete | 
+        ${data.case_count} cases analyzed | 
+        ${data.years_covered} years of data
+      `;
+
+      // Gap value
+      const gapCard = document.getElementById('gap-card');
+      gapCard.className = 'metric-card ' + (data.conviction_gap > 0.15 ? 'warning' : 'good');
+      document.getElementById('gap-value').textContent = 
+        (data.conviction_gap * 100).toFixed(1) + ' percentage points';
+      document.getElementById('gap-comparison').innerHTML = `
+        ${group === 'race_ethnicity' ? 'Black defendants convicted' : 'Gap'} at a rate 
+        ${data.conviction_gap > 0.10 ? 'significantly higher' : 'moderately higher'} 
+        than the reference group
+      `;
+
+      // Trend badge
+      const trendBadge = document.getElementById('trend-badge');
+      trendBadge.className = 'trend ' + data.trend;
+      trendBadge.textContent = data.trend === 'worsening' ? '↑ Worsening' : 
+        data.trend === 'improving' ? '↓ Improving' : '→ Stable';
+
+      // State comparison
+      document.getElementById('state-gap').textContent = 
+        (data.state_gap * 100).toFixed(1) + ' pp';
+      document.getElementById('state-comparison').innerHTML = `
+        Your county's gap is ${data.conviction_gap > data.state_avg ? 'worse than' : 'better than'} 
+        the state average of ${(data.state_avg * 100).toFixed(1)} pp
+      `;
+
+      // Peer comparison
+      document.getElementById('peer-ranking').textContent = 
+        `#${data.peer_ranking} out of ${data.total_peers}`;
+      document.getElementById('peer-comparison').innerHTML = `
+        Your county's gap is ${data.conviction_gap > data.peer_avg ? 'worse than' : 'better than'} 
+        the peer average of ${(data.peer_avg * 100).toFixed(1)} pp
+      `;
+
+      // Limitations
+      document.getElementById('limitations-text').innerHTML = `
+        <strong>Observational data:</strong> These statistics show correlation, not causation. 
+        Multiple factors influence case outcomes including offense severity, criminal history, and legal representation.<br>
+        <strong>Data quality:</strong> ${data.data_quality}% of cases have complete data on key fields.<br>
+        <strong>Sample size:</strong> ${data.case_count} cases over ${data.years_covered} years provides moderate statistical power.<br>
+        <strong>Not legal advice:</strong> These are aggregate statistics. Individual cases may vary significantly.
+      `;
+    }
+
+    // Auto-run on load with default values
+    window.addEventListener('load', () => {
+      // Pre-select Putnam County and run comparison
+      runComparison();
+    });
+  </script>
+</body>
+</html>
