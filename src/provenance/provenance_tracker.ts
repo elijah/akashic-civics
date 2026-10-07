@@ -13,7 +13,7 @@ export interface ProvenanceEntry {
   dataQualityScore: number;  // 0-100
   qualityFlags: string[];    // "missing_demographics", "inconsistent_dates", etc.
   transformationHistory: TransformationStep[];
-  hash: string;            // SHA256 of this entry
+  hash?: string;            // SHA256 of this entry, computed by addEntry
 }
 
 export interface TransformationStep {

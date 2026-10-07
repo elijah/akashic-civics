@@ -11,6 +11,9 @@
  * and allows analysts to compare against historical baselines.
  */
 
+import * as path from 'path';
+import * as fs from 'fs';
+
 export interface DataSnapshot {
   snapshot_id: string;
   timestamp: string;
@@ -42,6 +45,7 @@ export interface BaselineComparison {
 export class HistoricalBaseline {
   private snapshots: Map<string, DataSnapshot> = new Map();
   private snapshotDir: string;
+  private snapshotIndex: number = 0;
   
   constructor(snapshotDir: string = './snapshots') {
     this.snapshotDir = snapshotDir;
@@ -61,7 +65,7 @@ export class HistoricalBaseline {
     }>
   ): DataSnapshot {
     const timestamp = new Date().toISOString();
-    const snapshotId = `${jurisdictionId}_${Date.now()}`;
+    const snapshotId = `${jurisdictionId}_${Date.now()}_${this.snapshotIndex++}`;
     
     // Calculate statistics
     const stats = this.computeStats(cases);
@@ -132,7 +136,8 @@ export class HistoricalBaseline {
   getMostRecentSnapshot(): DataSnapshot | null {
     let latest: DataSnapshot | null = null;
     for (const snap of this.snapshots.values()) {
-      if (!latest || snap.timestamp > latest.timestamp) {
+      if (!latest || snap.timestamp > latest.timestamp ||
+          (snap.timestamp === latest.timestamp && snap.snapshot_id > latest.snapshot_id)) {
         latest = snap;
       }
     }

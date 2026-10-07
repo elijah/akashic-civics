@@ -3,9 +3,7 @@
  * Creates one-page disparity reports for public consumption
  */
 
-import * as crypto from 'crypto';
-import { ProvenanceTracker } from '../provenance/provenance_tracker';
-import { HistoricalBaseline } from '../statistical/historical_baseline';
+import ProvenanceTracker from '../provenance/provenance_tracker';
 
 interface RedFlagReport {
   jurisdiction_id: string;
@@ -83,11 +81,9 @@ interface ReportConfig {
  */
 export class RedFlagReporter {
   private provenance: ProvenanceTracker;
-  private baseline: HistoricalBaseline;
 
   constructor() {
     this.provenance = new ProvenanceTracker();
-    this.baseline = new HistoricalBaseline('./snapshots');
   }
 
   /**
@@ -97,11 +93,11 @@ export class RedFlagReporter {
     jurisdictionId: string;
     jurisdictionName: string;
     cases: Array<{
-      race_ethnicity: string;
-      conviction: number;
-      sentence_months: number;
-      days_to_disposition: number;
-      offense_severity: string;
+      race_ethnicity?: string;
+      conviction?: number;
+      sentence_months?: number;
+      days_to_disposition?: number;
+      offense_severity?: string;
       judge_name?: string;
       prosecutor_office?: string;
       [key: string]: any;
@@ -112,7 +108,8 @@ export class RedFlagReporter {
   }): Promise<RedFlagReport> {
     const now = new Date();
     const qualityReport = this.provenance.getQualityReport();
-    
+    const cases = config.cases;
+
     // Compute metrics
     const metrics = this.computeMetrics(cases, config.startDate, config.endDate);
     
@@ -120,9 +117,10 @@ export class RedFlagReporter {
     const reference = await this.computeReferenceComparison(config.jurisdictionId, cases);
     
     // Compute trend
-    const trend = config.include_trends 
+    const includeTrends = config.config?.include_trends !== false;
+    const trend = includeTrends 
       ? this.computeTrend(cases, config.startDate, config.endDate)
-      : { direction: 'unknown', pct_change: 0, years_covered: 0, data_points: [], trend_description: 'Insufficient data for trend analysis' };
+      : { direction: 'unknown' as const, pct_change: 0, years_covered: 0, data_points: [], trend_description: 'Insufficient data for trend analysis' };
     
     // Generate recommendations
     const recommendations = this.generateRecommendations(metrics, reference, trend);
@@ -131,7 +129,7 @@ export class RedFlagReporter {
     const methodologyNote = this.generateMethodologyNote(cases, qualityReport);
     
     // Compute provenance hash
-    const provenanceHash = this.provenance.exportProvenance();
+    const provenanceHash = this.provenance.exportProvenance().toString();
     
     // Build report
     const report: RedFlagReport = {
@@ -164,8 +162,8 @@ export class RedFlagReporter {
    */
   private computeMetrics(
     cases: Array<any>,
-    startDate: string,
-    endDate: string
+    _startDate: string,
+    _endDate: string
   ): MetricReport[] {
     const metrics: MetricReport[] = [];
     
@@ -258,9 +256,6 @@ export class RedFlagReporter {
     // Simplified CI for difference in proportions
     const z = 1.96;  // 95% CI
     
-    // Pooled proportion
-    const p pooled = (countA + countB) > 0 ? (countA + countB) / 2 : 0.5;  // placeholder
-    
     // Standard error
     const se = Math.sqrt((gap * (1 - gap) / countA) + (gap * (1 - gap) / countB));
     
@@ -273,16 +268,11 @@ export class RedFlagReporter {
    * Compute reference comparison
    */
   private async computeReferenceComparison(
-    jurisdictionId: string,
-    cases: Array<any>
+    _jurisdictionId: string,
+    _cases: Array<any>
   ): Promise<ReferenceComparison> {
     // In production, this would query state database
     // For now, use placeholder with trend from historical baseline
-    
-    const snapshots = await this.baseline.getSnapshots(jurisdictionId);
-    const pctChange = snapshots.length > 1 ? 
-      (snapshots[snapshots.length - 1].key_statistics.conviction_rate - 
-       snapshots[0].key_statistics.conviction_rate) * 100 : 0;
     
     return {
       state_average_gap: 0.08,  // placeholder - 8 percentage points
@@ -300,8 +290,8 @@ export class RedFlagReporter {
    */
   private computeTrend(
     cases: Array<any>,
-    startDate: string,
-    endDate: string
+    _startDate: string,
+    _endDate: string
   ): TrendReport {
     // Group by year
     const byYear = cases.reduce((acc: Record<string, any[]>, caseItem) => {
@@ -330,9 +320,8 @@ export class RedFlagReporter {
     });
     
     // Compute gap per year (assuming binary Black/White for simplicity)
-    const gaps = rates.map((r, i) => {
+    const gaps = rates.map((_r) => {
       // Simplified: compute Black vs White gap
-      const yearBlackCases = rates.filter(r => r.year === rates[i].year && /* would filter by race */ true);
       // Placeholder rates
       const blackRate = 0.65;  // Would compute from data
       const whiteRate = 0.52;  // Would compute from data
@@ -366,11 +355,11 @@ export class RedFlagReporter {
       direction,
       pct_change: direction === 'unknown' ? 0 : pctChange,
       years_covered: years.length,
-      data_points: rates.map(r => ({
+      data_points: rates.map((r, index) => ({
         year: r.year,
-        conviction_rate_black: rates.find(r2 => r2.year === r.year)?.conviction_rate ?? 0,
+        conviction_rate_black: r.conviction_rate,  // This should already be black rate from context
         conviction_rate_white: 0,  // placeholder
-        gap: gaps.find(g => /* filtered */ true) ?? 0
+        gap: gaps[index] ?? 0
       })),
       trend_description: trendDescription
     };
@@ -460,7 +449,7 @@ For specific legal questions, consult qualified legal counsel.
     
     const dataSection = `## Data Overview\n- **Cases Analyzed**: ${report.data_quality.case_count}\n- **Time Period**: ${report.data_period.start} to ${report.data_period.end}\n- **Data Quality Score**: ${report.data_quality.avg_quality_score.toFixed(1)}/100\n- **Coverage**: ${report.data_quality.coverage_years} years\n\n`;
     
-    const metricsSection = '## 📊 Disparity Metrics\n\n';
+    let metricsSection = '## 📊 Disparity Metrics\n\n';
     for (const metric of report.metrics) {
       metricsSection += `### ${metric.name.replace(/_/g, ' ')}\n`;
       metricsSection += `- **${metric.primary_group} defendants**: ${metric.primary_rate.toFixed(3)} conviction rate (${metric.primary_rate.toFixed(1)}%)\n`;
@@ -473,8 +462,9 @@ For specific legal questions, consult qualified legal counsel.
       metricsSection += `\n`;
     }
     
-    const referenceSection = reference_comparison_section(reference: ReferenceComparison);
+    const referenceSection = reference_comparison_section(report.reference_comparison);
     
+    const trend = report.trend || { direction: 'unknown' as const, pct_change: 0, years_covered: 0, data_points: [], trend_description: '' };
     const trendSection = trend.direction !== 'unknown' 
       ? `## 📈 Trend Over Time\n- **Direction**: ${trend.direction.toUpperCase()}\n- **Change**: ${trend.pct_change.toFixed(1)} percentage points over ${trend.years_covered} years\n- **Description**: ${trend.trend_description}\n\n` : '';
     

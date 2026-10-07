@@ -3,9 +3,6 @@
  * Tracks individual decision-makers (judges, prosecutors) and their disparity metrics
  */
 
-import * as crypto from 'crypto';
-import { ProvenanceTracker } from '../provenance/provenance_tracker';
-
 interface OfficialStats {
   official_id: string;
   official_name: string;
@@ -43,11 +40,7 @@ interface OfficialComparison {
  * Track individual officials and compute their disparity metrics
  */
 export class OfficialsTracker {
-  private provenance: ProvenanceTracker;
-
-  constructor() {
-    this.provenance = new ProvenanceTracker();
-  }
+  constructor() {}
 
   /**
    * Process cases and compute official-level statistics
@@ -77,7 +70,6 @@ export class OfficialsTracker {
     for (const [officialId, officialCases] of Object.entries(byOfficial)) {
       if (officialCases.length === 0) continue;
 
-      const firstCase = officialCases[0];
       const stats = this.computeOfficialStats(officialId, officialCases);
       officialsStats.push(stats);
     }
@@ -143,7 +135,7 @@ export class OfficialsTracker {
 
       // Compute confidence interval for the gap
       const ci = this.computeGapCI(
-        rate, convictionsByGroup[group], count,
+        rate, convictionsByGroup[group], countsByGroup[group],
         referenceRate, convictionsByGroup[referenceGroup], countsByGroup[referenceGroup]
       );
       confidenceIntervals[group] = ci;
@@ -203,8 +195,8 @@ export class OfficialsTracker {
    * Compute confidence interval for gap between two proportions
    */
   private computeGapCI(
-    p1: number, x1: number, n1: number,
-    p2: number, x2: number, n2: number
+    p1: number, _x1: number, n1: number,
+    p2: number, _x2: number, n2: number
   ): [number, number] {
     // Standard error for difference in proportions
     const se = Math.sqrt(
@@ -297,10 +289,13 @@ export class OfficialsTracker {
     });
 
     const disparityScores: Record<string, number> = {};
+    const referenceCount = countsByGroup[referenceGroup] || 0;
+    const referenceConvictions = convictionsByGroup[referenceGroup] || 0;
+    const referenceRate = referenceCount > 0 ? referenceConvictions / referenceCount : 0;
+
     for (const [group, count] of Object.entries(countsByGroup)) {
       if (group === referenceGroup) continue;
       const rate = convictionsByGroup[group] / count;
-      const referenceRate = convictionsByGroup[referenceGroup] / countsByGroup[referenceGroup];
       disparityScores[group] = rate - referenceRate;
     }
 
@@ -318,7 +313,7 @@ export class OfficialsTracker {
     const disparityScores = officials.map(official => {
       // Find largest absolute disparity
       let maxDisparity = 0;
-      for (const [group, gap] of Object.entries(official.disparity_scores)) {
+      for (const [_group, gap] of Object.entries(official.disparity_scores)) {
         const absGap = Math.abs(gap);
         if (absGap > maxDisparity) {
           maxDisparity = absGap;

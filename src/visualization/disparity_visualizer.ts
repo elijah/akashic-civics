@@ -186,17 +186,17 @@ export class DisparityVisualizer {
   /**
    * Generate appropriate visualization based on data type
    */
-  autoSelectViz(data: any[], config: Partial<VizConfig>['config']): VizSpec {
-    const groupVar = config.group_var || 'race_ethnicity';
-    const metric = config.metric || 'conviction_rate';
+  autoSelectViz(data: any[], config: VizConfig): VizSpec {
+    const groupVar = config.config.group_var || 'race_ethnicity';
+    const metric = config.config.metric || 'conviction_rate';
     
     // Determine best visualization based on data characteristics
-    if (config.time_var && metric.includes('gap')) {
+    if (config.config.time_var && metric.includes('gap')) {
       return this.trendLineDisparity({
         type: 'trend',
         title: config.title || `Trend: ${metric.replace(/_/g, ' ')} Over Time`,
         data: [],
-        config: config as any
+        config: config.config
       });
     }
     
@@ -205,7 +205,7 @@ export class DisparityVisualizer {
         type: 'bar',
         title: config.title || 'Disparity by Judge',
         data: [],
-        config: config as any
+        config: config.config
       });
     }
     
@@ -214,7 +214,7 @@ export class DisparityVisualizer {
         type: 'sentence',
         title: config.title || 'Sentence Length Distribution',
         data: [],
-        config: config as any
+        config: config.config
       });
     }
     
@@ -223,7 +223,7 @@ export class DisparityVisualizer {
         type: 'disposition',
         title: config.title || 'Case Outcomes by Group',
         data: [],
-        config: config as any
+        config: config.config
       });
     }
     
@@ -233,7 +233,7 @@ export class DisparityVisualizer {
         type: 'heatmap',
         title: config.title || `Disparity by ${groupVar.replace(/_/g, ' ')} and Offense Type`,
         data: [],
-        config: config as any
+        config: config.config
       });
     }
     
@@ -242,7 +242,7 @@ export class DisparityVisualizer {
       type: 'bar',
       title: config.title || `Rate by ${groupVar.replace(/_/g, ' ')}`,
       data: [],
-      config: config as any
+      config: config.config
     });
   }
 }
@@ -250,7 +250,7 @@ export class DisparityVisualizer {
 /**
  * Generate HTML embed code for visualizations
  */
-export function generateEmbedCode(vizSpec: VizSpec, data: any[], width: string = '100%', height: string = '500px'): string {
+export function generateEmbedCode(vizSpec: VizSpec, width: string = '100%', height: string = '500px'): string {
   return `
 <div class="akashic-viz" style="width: ${width}; height: ${height};">
   <div class="viz-header">
