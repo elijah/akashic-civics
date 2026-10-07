@@ -1,0 +1,217 @@
+# Akashic Justice Analysis Template: E-value Sensitivity Analysis
+
+This template provides a complete, pre-registered E-value sensitivity analysis to quantify robustness of observed disparities to unmeasured confounding.
+
+## Usage
+
+```r
+# Source the core Akashic functions
+source("akashicjustice.R")
+source("disconfirmation.R")
+source("pre_registration.R")
+
+# Create template instance
+template <- create_evalue_template(
+  jurisdiction = "Your Jurisdiction",
+  groups_of_interest = c("Black", "Hispanic"),
+  outcome = "conviction",
+  controls = c("offense_severity", "charge_type", "age_at_arrest"),
+  primary_effect = 2.5  # Observed effect size (odds ratio)
+)
+
+# Render the analysis
+render_evalue_analysis(template, data = your_cases, output_dir = "results")
+```
+
+---
+
+## Template Structure
+
+### 1. Pre-Registration
+
+```r
+template$pre_registration <- pre_registration_template()
+
+# Set research question
+template$pre_registration$research_question <- paste0(
+  "What level of unmeasured confounding would be needed to ",
+  "explain away the observed ", template$primary_effect,
+  "-fold disparity in ", template$outcome, " between ",
+  paste(template$groups_of_interest, collapse = "/"),
+  " and ", template$reference_group, " defendants?"
+)
+
+# Set hypothesis
+template$pre_registration$hypothesis <- list(
+  statement = paste0(
+    "The observed effect (OR = ", template$primary_effect, ") is robust ",
+    "to unmeasured confounding requiring at least E-value = ",
+    round(sqrt(template$primary_effect) + sqrt(template$primary_effect - 1), 2)
+  ),
+  directional = "one.sided",
+  alpha = 0.05
+)
+
+# Set outcome variable
+template$pre_registration$outcome_variable <- list(
+  name = template$outcome,
+  definition = "Binary: 1 if convicted, 0 otherwise",
+  type = "binary"
+)
+
+# Set predictor variables
+template$pre_registration$predictor_variable <- list(
+  name = "race_ethnicity",
+  levels = c(template$reference_group, template$groups_of_interest),
+  reference_level = template$reference_group,
+  coding = "factor with levels ordered alphabetically"
+)
+```
+
+### 2. Analysis Plan
+
+```r
+template$pre_registration$analysis_plan <- list(
+  method = "logistic regression with E-value sensitivity analysis",
+  model_formula = paste0(
+    template$outcome, " ~ race_ethnicity + ",
+    paste(template$controls, collapse = " + ")
+  ),
+  software = "R 4.x+ with {dplyr, broom, sandwich, lmtest, EValue}",
+  packages = c("dplyr", "broom", "sandwich", "lmtest", "EValue", "ggplot2"),
+  estimation_method = "maximum likelihood",
+  model_type = "binary logistic regression"
+)
+```
+
+### 3. E-value Calculation
+
+```r
+template$evalue <- list(
+  # The minimum strength of association that an unmeasured confounder
+  # would need to have with both the treatment and the outcome to
+  # fully explain away the observed effect
+  method = "VanderWeele & Ding (2017)",
+  
+  # For binary outcome: E-value = OR + sqrt(OR * (OR - 1))
+  # For HR: E-value = HR + sqrt(HR * (HR - 1))
+  formula = "E-value = observed_effect + sqrt(observed_effect * (observed_effect - 1))",
+  
+  # For continuous outcome: use Cohen's d
+  d_formula = "E-value = exp(1.25 * |d|) + sqrt(exp(2.5 * d^2) - 1)"
+)
+```
+
+### 4. Disconfirmation Specifications
+
+```r
+template$disconfirmation <- list(
+  # 1. Placebo test: should NOT find effect on non-causal outcomes
+  placebo = list(
+    outcome = "random_permuted_outcome",
+    expected_null = TRUE,
+    description = "Permute outcome to check for false positives"
+  ),
+  
+  # 2. Specification sensitivity
+  specifications = list(
+    "Full model" = c(template$outcome, template$controls),
+    "Without demographics" = c(template$outcome, "offense_severity", "charge_type"),
+    "With interaction" = c(template$outcome, template$controls, "race_ethnicity:offense_severity"),
+    "Propensity score adjustment" = c(template$outcome, "pscore"),
+    "Coarsened exact matching" = c(template$outcome, "cem_groups")
+  ),
+  
+  # 3. Negative controls
+  negative_controls = list(
+    list(outcome = "time_to_arrest", reason = "Unrelated to bias"),
+    list(outcome = "time_between_charges", reason = "Administrative timing")
+  ),
+  
+  # 4. Alternative explanations (confounders not in data)
+  alternatives = list(
+    "Socioeconomic status" = "Parental income/education (not recorded)",
+    "Neighborhood deprivation" = "Census tract poverty rate (not recorded)",
+    "Prior involvement with system" = "Prior arrests (not always recorded)",
+    "Lawyer quality" = "Public defender vs private",
+    "Judge assignment" = "Judge demographics not recorded",
+    "Prosecutor office" = "Office-level policies"
+  )
+)
+```
+
+### 5. Main Analysis Function
+
+```r
+template$run_analysis <- function(data, output_dir = "results") {
+  # Save pre-registration
+  save_pre_registration(template$pre_registration, file.path(output_dir, "pre_registration.rds"))
+  
+  # Primary logistic regression
+  formula_str <- paste0(
+    template$outcome, " ~ race_ethnicity + ",
+    paste(template$controls, collapse = " + ")
+  )
+  primary_model <- stats::glm(formula_str, data = data, family = binomial())
+  primary_robust <- lmtest::coeftest(primary_model, vcov. = sandwich::vcovHC(primary_model, type = "HC1"))
+  
+  # E-value calculation
+  observed_or <- exp(primary_robust["race_ethnicityBlack", "estimate"])
+  eval_r <- observed_or + sqrt(observed_or * (observed_or - 1))
+  
+  # Sensitivity analysis with EValue package
+  if (requireNamespace("EValue", quietly = TRUE)) {
+    sensitivity <- EValue::evi(observed_or)
+    sensitivity_robust <- EValue::evi(observed_or, delta = 0.05)
+  }
+  
+  # Generate KM curves by race for report
+  km_plot <- ggplot2::ggplot(data, ggplot2::aes(
+    x = days_to_disposition,
+    color = race_ethnicity
+  )) +
+    ggplot2::stat_survival() +
+    ggplot2::labs(title = "Time to Disposition by Race")
+  
+  # Generate report
+  report <- generate_pre_registration_report(template$pre_registration)
+  writeLines(report, file.path(output_dir, "report.md"))
+  
+  return(list(
+    primary = list(
+      model = primary_model,
+      robust = primary_robust,
+      odds_ratio = observed_or,
+      e_value = eval_r,
+      sensitivity = sensitivity
+    ),
+    plot = km_plot
+  ))
+}
+```
+
+---
+
+## Expected Output
+
+Running this template generates:
+
+```
+results/
+├── pre_registration.rds
+├── report.md
+├── sensitivity_analysis.rds
+└── e_value_calculation.json
+```
+
+## Report Sections
+
+1. **Research Question & Hypothesis**
+2. **Data Summary**
+3. **Primary Analysis** - Logistic regression with OR and CI
+4. **E-value** - Minimum confounding strength to explain away effect
+5. **Sensitivity Analysis** - Robust estimates across specifications
+6. **Negative Controls** - Confirm no false positives
+7. **Unmeasured Confounding** - What confounders would need to look like
+8. **Comparison** - Pre-registered vs observed
+9. **Limitations** - Missing data, unmeasured confounders

@@ -1,0 +1,287 @@
+# Akashic Justice Analysis Template: Time to Disposition
+
+This template provides a complete, pre-registered analysis of time to disposition (case processing time) across racial/ethnic groups, controlling for case characteristics.
+
+## Usage
+
+```r
+# Source the core Akashic functions
+source("akashicjustice.R")
+source("disconfirmation.R")
+source("pre_registration.R")
+
+# Create template instance
+template <- create_time_to_disposition_template(
+  jurisdiction = "Your Jurisdiction",
+  groups_of_interest = c("Black", "Hispanic"),
+  include_pending = FALSE,
+  controls = c("offense_severity", "charge_type", "case_complexity", "age_at_arrest")
+)
+
+# Render the analysis
+render_time_to_disposition(template, data = your_cases, output_dir = "results")
+```
+
+---
+
+## Template Structure
+
+### 1. Pre-Registration
+
+```r
+template$pre_registration <- pre_registration_template()
+
+# Set research question
+template$pre_registration$research_question <- paste0(
+  "In ", template$jurisdiction, ", do ",
+  paste(template$groups_of_interest, collapse = "/"),
+  " defendants experience longer time to disposition than ",
+  template$reference_group, " defendants, controlling for case characteristics?"
+)
+
+# Set hypothesis
+template$pre_registration$hypothesis <- list(
+  statement = paste0(
+    template$groups_of_interest[1], " defendants experience longer time to "
+    "disposition than ", template$reference_group, " defendants, "
+    "after controlling for offense severity, charge type, case complexity, and age at arrest"
+  ),
+  directional = "one.sided",
+  alpha = 0.05
+)
+
+# Set outcome variable
+template$pre_registration$outcome_variable <- list(
+  name = template$outcome,
+  definition = "Time to disposition in days (date of disposition minus date of arrest)",
+  type = "continuous"
+)
+
+# Set predictor variables
+template$pre_registration$predictor_variable <- list(
+  name = "race_ethnicity",
+  levels = c(template$reference_group, template$groups_of_interest),
+  reference_level = template$reference_group,
+  coding = "factor with levels ordered alphabetically"
+)
+
+# Set control variables
+template$pre_registration$control_variables$controls <- list(
+  offense_severity = list(
+    description = "Severity level of the charged offense",
+    type = "ordered factor",
+    included = TRUE
+  ),
+  charge_type = list(
+    description = "Type of offense",
+    type = "factor",
+    included = TRUE
+  ),
+  case_complexity = list(
+    description = "Number of charges, counts of motions, number of witnesses",
+    type = "count",
+    included = TRUE
+  ),
+  age_at_arrest = list(
+    description = "Defendant's age at time of arrest",
+    type = "continuous",
+    included = TRUE
+  )
+)
+
+template$pre_registration$inclusion_criteria <- list(
+  min_cases_per_group = 30,
+  include_pending = template$include_pending,
+  exclude_judicial_recusal = TRUE,
+  exclude_appeal_pending = TRUE,
+  exclude_cases_with_missing_arrest_date = TRUE
+)
+```
+
+### 2. Analysis Plan
+
+```r
+template$pre_registration$analysis_plan <- list(
+  method = "accelerated failure time (AFT) model with robust standard errors",
+  model_formula = paste0(
+    "Surv(0, disposition_day, event = disposition_day > 0) ~ race_ethnicity + ",
+    paste(template$controls, collapse = " + ")
+  ),
+  software = "R 4.x+ with {survival, dplyr, broom, sandwich, survminer}",
+  packages = c("survival", "dplyr", "broom", "sandwich", "survminer", "ggplot2"),
+  estimation_method = "Weibull AFT model with HC1 robust standard errors",
+  model_type = "survival analysis",
+  dist = "Weibull"
+)
+
+template$pre_registration$significance_threshold <- list(
+  alpha = 0.05,
+  two.sided = TRUE,
+  adjustment_for_multiplicity = "none",
+  adjustment_method = "Single primary test"
+)
+```
+
+### 3. Survival Specification
+
+```r
+template$survival <- list(
+  time_var = "days_to_disposition",
+  event = "disposition_occurred",
+  event_definition = "Disposition = conviction OR acquittal OR dismissal",
+  censoring = "Censored if: case still open, transfer, nolle prosequi",
+  model_family = "Weibull",
+  dist = "Weibull",
+  link = "log",
+  n_ties = "there are ties in survival times"
+)
+```
+
+### 3. Effect Size Specification
+
+```r
+template$effect_size <- list(
+  primary = "ratio of median survival times by race",
+  standardized = "Hazard ratio from AFT model",
+  interpretation = "HR > 1: longer time to disposition for groups_of_interest",
+  quantile = "difference in median days to disposition"
+)
+
+template$additional_analyses <- list(
+  "Kaplan-Meier curves" = "Plot median survival by group",
+  "Log-rank test" = "Test equality of survival distributions",
+  "Cox proportional hazards" = "Cox model (check PH assumption first)",
+  "Spline modeling" = "Flexible modeling of time effects"
+)
+```
+
+### 4. Disconfirmation Specifications
+
+```r
+template$disconfirmation <- list(
+  # 1. Placebo test: should NOT find effect on non-case outcomes
+  placebo = list(
+    outcome = "incarceration_start_date",
+    expected_null = TRUE,
+    description = "Incarceration start should follow conviction date"
+  ),
+  
+  # 2. Specification sensitivity
+  specifications = list(
+    "Cox model" = "Cox proportional hazards",
+    "Exponential model" = "Exponential AFT",
+    "Log-normal model" = "Log-normal AFT",
+    "Kaplan-Meier medians" = "Just compare medians",
+    "With court fixed effects" = "If multiple judges",
+    "Without severe cases" = "Exclude felony cases"
+  ),
+  
+  # 3. Negative controls
+  negative_controls = list(
+    list(outcome = "arrest_to_booking_time", reason = "Booking is administrative"),
+    list(outcome = "time_between_charges", reason = "Unrelated to case processing")
+  ),
+  
+  # 4. Alternative explanations
+  alternatives = list(
+    "Case complexity distribution" = TRUE,
+    "Judge assignment pattern" = TRUE,
+    "Prosecutor office" = TRUE,
+    "Public defender assignment" = TRUE,
+    "Geographic jurisdiction" = TRUE,
+    "Temporal trends during pandemic" = TRUE
+  )
+)
+```
+
+### 5. Main Analysis Function
+
+```r
+template$run_analysis <- function(data, output_dir = "results") {
+  # Save pre-registration
+  save_pre_registration(template$pre_registration, file.path(output_dir, "pre_registration.rds"))
+  
+  # Prepare analysis data
+  analysis_data <- data %>%
+    filter(!is.na(arrest_date), !is.na(!!rlang::sym(template$outcome))) %>%
+    mutate(
+      # Create survival object
+      surv_time = as.numeric(!!rlang::sym(template$outcome)),
+      event = ifelse(is.na(disposition_date), 0, 1),
+      disposition_date = as.Date(disposition_date, origin = "1970-01-01"),
+      arrest_date = as.Date(arrest_date, origin = "1970-01-01")
+    ) %>%
+    filter(surv_time >= 0)
+  
+  # Fit AFT Weibull model
+  surv_obj <- Surv(time = analysis_data[[template$survival$time_var]],
+                   event = analysis_data[[template$survival$event]])
+  
+  formula_str <- as.formula(template$pre_registration$analysis_plan$model_formula)
+  aft_model <- survival::survreg(formula_str, data = analysis_data, dist = template$survival$dist)
+  
+  # Effect size: hazard ratio & median difference
+  hr <- exp(-coef(aft_model)["race_ethnicityBlack"])  # HR for Black vs reference
+  med_diff <- qweibull(0.5, scale = exp(-coef(aft_model)["(intercept)"])) -
+              qweibull(0.5, scale = exp(-coef(aft_model)["(intercept)"] - coef(aft_model)["race_ethnicityBlack"]))
+  
+  # Run disconfirmation
+  disconfirmation_result <- run_full_disconfirmation(
+    data = analysis_data,
+    analysis_function = time_to_disposition,
+    analysis_spec = list(
+      outcome = template$survival$time_var,
+      group_var = "race_ethnicity",
+      controls = template$controls,
+      event = template$survival$event,
+      censoring = template$survival$censoring
+    ),
+    placebo_specs = list(outcome = "arrest_to_booking_time"),
+    negative_controls = c("arrest_to_booking_time", "time_between_charges"),
+    time_var = template$survival$time_var
+  )
+  
+  # Generate KM curves for report
+  km_fit <- survfit(Surv(time = analysis_data[[template$survival$time_var]],
+                         event = analysis_data[[template$survival$event]]) ~ race_ethnicity,
+                    data = analysis_data)
+  
+  # Generate report
+  report <- generate_pre_registration_report(template$pre_registration)
+  writeLines(report, file.path(output_dir, "report.md"))
+  
+  return(list(
+    primary = list(model = aft_model, surv_obj = surv_obj, hr = hr, med_diff = med_diff),
+    disconfirmation = disconfirmation_result,
+    km_fit = km_fit
+  ))
+}
+```
+
+---
+
+## Expected Output
+
+Running this template generates:
+
+```
+results/
+├── pre_registration.rds
+├── report.md
+├── survival_analysis.rds
+├── km_curves.png
+└── disconfirmation_tests.rds
+```
+
+## Report Sections
+
+1. **Research Question & Hypothesis** - From pre-registration
+2. **Data Summary** - N, censoring rate, demographics
+3. **Descriptive Statistics** - Median days to disposition by race
+4. **Primary Analysis** - AFT Weibull model with HR
+5. **Effect Size** - HR, median difference, CI, p-value
+6. **Model Diagnostics** - PH assumption, AIC/BIC, residual checks
+7. **Survival Curves** - KM plots by group
+8. **Disconfirmation Testing** - All 6 falsification tests
+9. **Comparison** - Pre-registered vs observed
+10. **Limitations** - Censoring rate, follow-up time, confounders

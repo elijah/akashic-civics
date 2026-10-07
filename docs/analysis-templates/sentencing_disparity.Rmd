@@ -1,0 +1,269 @@
+# Akashic Justice Analysis Template: Sentencing Disparity
+
+This template provides a complete, pre-registered analysis of racial/ethnic disparity in sentence length among convicted defendants.
+
+## Usage
+
+```r
+# Source the core Akashic functions
+source("akashicjustice.R")
+source("disconfirmation.R")
+source("pre_registration.R")
+
+# Create template instance
+template <- create_sentencing_disparity_template(
+  jurisdiction = "Your Jurisdiction",
+  groups_of_interest = c("Black", "Hispanic"),
+  outcome = "sentence_months",
+  controls = c("offense_severity", "charge_type", "prior_record", "age_at_arrest")
+)
+
+# Render the analysis (with pre-registration)
+render_sentencing_analysis(template, data = your_convicted_cases, output_dir = "results")
+```
+
+---
+
+## Template Structure
+
+### 1. Pre-Registration
+
+```r
+template$pre_registration <- pre_registration_template()
+
+# Set research question
+template$pre_registration$research_question <- paste0(
+  "Among convicted defendants in ", template$jurisdiction, ", do ",
+  paste(template$groups_of_interest, collapse = "/"),
+  " defendants receive longer sentences than ", template$reference_group,
+  " defendants, controlling for case characteristics?"
+)
+
+# Set hypothesis
+template$pre_registration$hypothesis <- list(
+  statement = paste0(
+    template$groups_of_interest[1], " defendants receive longer sentences "
+    "than ", template$reference_group, " defendants, "
+    "after controlling for offense severity, charge type, prior record, and age at arrest"
+  ),
+  directional = "one.sided",
+  alpha = 0.05
+)
+
+# Set outcome variable
+template$pre_registration$outcome_variable <- list(
+  name = template$outcome,
+  definition = "Sentence length in months (months between sentencing date and earliest release date)",
+  type = "continuous"
+)
+
+# Set predictor variables
+template$pre_registration$predictor_variable <- list(
+  name = "race_ethnicity",
+  levels = c(template$reference_group, template$groups_of_interest),
+  reference_level = template$reference_group,
+  coding = "factor with levels ordered alphabetically"
+)
+
+# Set control variables
+template$pre_registration$control_variables$controls <- list(
+  offense_severity = list(
+    description = "Severity level of the convicted offense",
+    type = "ordered factor",
+    included = TRUE
+  ),
+  charge_type = list(
+    description = "Type of offense",
+    type = "factor",
+    included = TRUE
+  ),
+  prior_record = list(
+    description = "Number of prior convictions",
+    type = "count",
+    included = TRUE
+  ),
+  age_at_arrest = list(
+    description = "Defendant's age at time of arrest",
+    type = "continuous",
+    included = TRUE
+  )
+)
+
+template$pre_registration$inclusion_criteria <- list(
+  min_cases_per_group = 30,
+  exclude_no_sentence = TRUE,
+  exclude_probation_only = TRUE,
+  exclude_imprisonment_suspended = TRUE,
+  cap_outliers = TRUE,
+  outlier_cap_months = 240  # Cap sentences at 20 years
+)
+```
+
+### 2. Analysis Plan
+
+```r
+template$pre_registration$analysis_plan <- list(
+  method = "multiple linear regression with robust standard errors",
+  model_formula = paste0(
+    template$outcome, " ~ race_ethnicity + offense_severity + ",
+    "charge_type + prior_record + age_at_arrest"
+  ),
+  software = "R 4.x+ with {dplyr, broom, sandwich, lmtest}",
+  packages = c("dplyr", "broom", "sandwich", "lmtest", "car"),
+  estimation_method = "OLS with HC1 robust standard errors",
+  model_type = "linear regression",
+  transformations = c("log-transform if skewed"),
+  assumptions_to_check = c("Normality of residuals", "Homoscedasticity", "Linearity", "Independence", "No perfect multicollinearity")
+)
+
+template$pre_registration$significance_threshold <- list(
+  alpha = 0.05,
+  two.sided = FALSE,
+  adjustment_for_multiplicity = "none",
+  adjustment_method = "Single primary test"
+)
+```
+
+### 3. Effect Size Specification
+
+```r
+template$effect_size <- list(
+  primary = "mean difference in sentence months by race",
+  standardized = "Cohen's d (difference in means / pooled SD)",
+  interpretation = "Positive values indicate longer sentences for groups_of_interest"
+)
+
+template$additional_analyses <- list(
+  "Interaction terms" = "race_ethnicity * offense_severity (test if disparity differs by severity)",
+  "Quantile regression" = "Median sentence (robust to outliers)",
+  "Two-part model" = "Conviction probability * Sentence length (Hurdle model)",
+  "Fixed effects" = "County or judge fixed effects where feasible"
+)
+```
+
+### 4. Disconfirmation Specifications
+
+```r
+template$disconfirmation <- list(
+  # 1. Placebo test: should NOT find effect on non-discretionary outcomes
+  placebo = list(
+    outcome = "days_to_disposition",
+    expected_null = TRUE,
+    description = "Processing times should be administrative, not discretionary"
+  ),
+  
+  # 2. Specification sensitivity
+  specifications = list(
+    "Full model" = c(template$outcome, "race_ethnicity", template$controls),
+    "No prior record" = c(template$outcome, "race_ethnicity", "offense_severity", "charge_type", "age_at_arrest"),
+    "Log-transformed outcome" = c("log_sentence_months", "race_ethnicity", template$controls),
+    "No age at arrest" = c(template$outcome, "race_ethnicity", "offense_severity", "charge_type", "prior_record"),
+    "With interaction" = c(template$outcome, "race_ethnicity", template$controls, "race_ethnicity:offense_severity"),
+    "Judge fixed effects" = list if judge_id present
+  ),
+  
+  # 3. Negative controls
+  negative_controls = list(
+    list(outcome = "days_to_disposition", reason = "Administrative processing time"),
+    list(outcome = "number_of_charges", reason = "Charges are pre-conviction and not discretionary")
+  ),
+  
+  # 4. Alternative explanations
+  alternatives = list(
+    "Prior record distribution" = TRUE,
+    "Offense mix within severity levels" = TRUE,
+    "Charge type distribution" = TRUE,
+    "Plea bargaining rate" = TRUE,
+    "Geographic variation" = TRUE,
+    "Temporal trends" = TRUE
+  )
+)
+```
+
+### 5. Main Analysis Function
+
+```r
+template$run_analysis <- function(data, output_dir = "results") {
+  # Save pre-registration
+  save_pre_registration(template$pre_registration, file.path(output_dir, "pre_registration.rds"))
+  
+  # Prepare analysis data
+  analysis_data <- data %>%
+    filter(conviction == 1, !is.na(!!rlang::sym(template$outcome)), sentence_months > 0) %>%
+    filter(!is.na(!!rlang::sym(template$controls[[1]])))
+  
+  # Primary analysis: OLS with robust SEs
+  formula_str <- paste0(
+    template$outcome, " ~ race_ethnicity + ",
+    paste(template$controls, collapse = " + ")
+  )
+  primary_model <- stats::lm(formula_str, data = analysis_data)
+  primary_tidy <- broom::tidy(primary_model, conf.int = TRUE, conf.level = 0.95)
+  primary_robust <- lmtest::coeftest(primary_model, vcov. = sandwich::vcovHC(primary_model, type = "HC1"))
+  
+  # Effect size: Cohen's d
+  means <- tapply(analysis_data[[template$outcome]], analysis_data$race_ethnicity, mean)
+  pooled_sd <- sqrt(
+    sum((analysis_data[[template$outcome]] - means[analysis_data$race_ethnicity])^2) / (nrow(analysis_data) - 2)
+  )
+  cohen_d <- (means[template$groups_of_interest[1]] - means[template$reference_group]) / pooled_sd
+  
+  # Run disconfirmation tests
+  disconfirmation_result <- run_full_disconfirmation(
+    data = analysis_data,
+    analysis_function = sentencing_disparity,
+    analysis_spec = list(
+      outcome = template$outcome,
+      group_var = "race_ethnicity",
+      controls = template$controls
+    ),
+    placebo_specs = list(outcome = "days_to_disposition"),
+    negative_controls = c("days_to_disposition", "number_of_charges"),
+    time_var = "days_to_disposition"
+  )
+  
+  # Compare pre-registered vs observed
+  comparison <- compare_pre_post(
+    template$pre_registration,
+    observed_effect = primary_tidy[primary_tidy$term == "race_ethnicity" && ...$coefficient, ],
+    observed_p = ...,
+    observed_conclusion = ...
+  )
+  
+  # Generate report
+  report <- generate_pre_registration_report(template$pre_registration)
+  writeLines(report, file.path(output_dir, "report.md"))
+  
+  return(list(
+    primary = list(model = primary_model, tidy = primary_tidy, robust = primary_robust, cohen_d = cohen_d),
+    disconfirmation = disconfirmation_result,
+    comparison = comparison
+  ))
+}
+```
+
+---
+
+## Expected Output
+
+Running this template generates:
+
+```
+results/
+├── pre_registration.rds
+├── report.md
+├── sentencing_analysis.rds
+└── disconfirmation_tests.rds
+```
+
+## Report Sections
+
+1. **Research Question & Hypothesis**
+2. **Data Summary** - N convicted, sentence stats by group
+3. **Descriptive Statistics** - Mean sentence by race
+4. **Primary Analysis** - OLS with robust SEs
+5. **Effect Size** - Mean difference + Cohen's d, CI, p-value
+6. **Assumption Checks** - Normality, homoscedasticity, multicollinearity
+7. **Disconfirmation Testing** - All 6 falsification tests
+8. **Comparison** - Pre-registered vs observed
+9. **Limitations** - Measurement, confounding, generalizability
