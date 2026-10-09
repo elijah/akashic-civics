@@ -1,6 +1,12 @@
-# Akashic Justice Analysis System - Quick Reference Card
+# Akashic Civics - Quick Reference Card
 
 ## One-Page Cheat Sheet
+
+---
+
+### About This Project
+
+Akashic Civics is an extension to the main Akashic project that provides specialized tools for analyzing hyper-local government and civic data with maximum methodological integrity. The system is designed around one core principle: **we must go to extraordinary lengths to ensure our questions do not pre-poison the data or reflect bias on our part.** Every finding must survive six falsification tests before it is considered credible evidence.
 
 ---
 

@@ -1,6 +1,10 @@
-# Akashic Justice Analysis System - Workbook
+# Akashic Civics Workbook
 
-This workbook walks you through the complete process of conducting rigorous legal bias analysis using the Akashic Justice Analysis System. Complete the exercises to gain hands-on experience with pre-registration, disconfirmation testing, and reproducible research.
+This workbook walks you through the complete process of conducting rigorous legal bias analysis using the Akashic Civics analysis system. Complete the exercises to gain hands-on experience with pre-registration, disconfirmation testing, and reproducible research.
+
+## About This Project
+
+Akashic Civics is an **extension to the main Akashic project** that provides specialized tools for analyzing hyper-local government and civic data with maximum methodological integrity. The system is designed around one core principle: **we must go to extraordinary lengths to ensure our questions do not pre-poison the data or reflect bias on our part.** When asking difficult questions about hyper-local government, we deliberately construct analyses that exert a large amount of effort toward avoiding bias and avoiding the appearance of political activism. The resulting analyses make clear that we are not acting out of anti-LEO, anti-government, or other politically questionable motives; instead, we are eliciting answers from systems that are rigorously self-checking.
 
 ## Exercise 1: Setting Up Your Environment
 

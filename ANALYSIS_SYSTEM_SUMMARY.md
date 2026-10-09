@@ -1,8 +1,10 @@
 # Akashic Justice Statistical Analysis System - COMPLETE
 
 ## Overview
-This system provides a methodologically rigorous framework for analyzing Akashic civic data to detect bias while minimizing false positives, HARKing, and p-hacking through mandatory pre-registration and comprehensive disconfirmation testing.
 
+This system provides a methodologically rigorous framework for analyzing hyper-local government and civic data to detect bias while minimizing false positives, HARKing, and p-hacking through mandatory pre-registration and comprehensive disconfirmation testing. Akashic Civics is an **extension to the main Akashic project** that brings the same rigorous data pipeline to civic institutions.
+
+The system is designed around one core principle: **we must go to extraordinary lengths to ensure our questions do not pre-poison the data or reflect bias on our part.** When asking difficult questions about hyper-local government, we deliberately construct analyses that exert a large amount of effort toward avoiding bias and avoiding the appearance of political activism. The resulting analyses make clear that we are not acting out of anti-LEO, anti-government, or other politically questionable motives; instead, we are eliciting answers from systems that are rigorously self-checking.
 ## Core Components
 
 ### 1. Disconfirmation Testing Framework (`disconfirmation.R`)

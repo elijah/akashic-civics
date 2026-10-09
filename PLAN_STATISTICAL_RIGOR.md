@@ -1,5 +1,19 @@
 # Plan: Building a Methodologically Rigorous System for Social Analysis
 
+## About This Project
+
+Akashic Civics is an **extension to the main Akashic project**. The main Akashic project aggregates intelligence about the world — aircraft, satellites, earthquakes, weather, public radio, infrastructure, country intelligence, public cameras, and open-source reconnaissance. Akashic Civics applies the same data pipeline to a domain where the questions are harder: **hyper-local government and civic institutions**.
+
+In that domain, the questions matter deeply:
+
+- Do certain demographic groups receive longer sentences for comparable offenses?
+- Are case processing times longer for some groups than others?
+- Do officials' decisions vary in ways that cannot be explained by case characteristics?
+
+These questions carry real social and political weight, and they are precisely the questions where a methodologically weak analysis would be easily dismissed — and where a methodologically careful one could genuinely illuminate injustice. We therefore designed this system to make the **care** itself visible: pre-registration before data examination, disconfirmation testing before claims are made, transparent provenance for every data point, and automatic documentation of every limitation. A finding that survives all of this is evidence of a quality that a sloppier analysis could never produce.
+
+This system is designed around one core principle: **we must go to extraordinary lengths to ensure our questions do not pre-poison the data or reflect bias on our part.** When asking difficult questions about hyper-local government, we deliberately construct analyses that exert a large amount of effort toward avoiding bias and avoiding the appearance of political activism. The resulting analyses make clear that we are not acting out of anti-LEO, anti-government, or other politically questionable motives; instead, we are eliciting answers from systems that are rigorously self-checking.
+
 ## Goal
 Build a system that enables rigorous, evidence-based analysis of social patterns (including potential biases in legal systems) with methodological standards that withstand scrutiny.
 
