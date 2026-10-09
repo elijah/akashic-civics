@@ -1,4 +1,4 @@
-import { HistoricalBaseline } from '../../../dist/statistical/historical_baseline';
+import HistoricalBaseline from '../../../src/statistical/historical_baseline';
 
 describe('HistoricalBaseline', () => {
   const snapshotDir = '/tmp/snapshots-test-historical-baseline';
