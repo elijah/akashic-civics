@@ -1,0 +1,30 @@
+# Build output
+dist/
+coverage/
+snapshots/
+test_snapshots2/
+test_snapshots3/
+
+# Analysis output (generated data)
+analysis_output/
+
+# Dependencies
+node_modules/
+
+# Lock files
+package-lock.json
+
+# Environment files
+.env*.local
+.env.local
+.env.*.local
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo

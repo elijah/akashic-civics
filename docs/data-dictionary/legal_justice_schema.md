@@ -7,7 +7,7 @@ This dictionary defines the standardized schema for all legal/justice data in th
 ### Core Identifiers
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
-| case_id | string | Unique case identifier | "case-12345" |
+| id | string | Unique case identifier | "case-12345" |
 | jurisdiction_id | string | Court/jurisdiction ID | "putnam-county-tn" |
 | jurisdiction_name | string | Human-readable jurisdiction name | "Putnam County, TN" |
 | source_connector | string | Data source (CSV, API, etc.) | "tn_courts_api_v2" |
@@ -17,72 +17,80 @@ This dictionary defines the standardized schema for all legal/justice data in th
 ### Demographics (Privacy-Preserving Options)
 | Field | Type | Description | Values |
 |-------|------|-------------|---------|
-| race_ethnicity | categorical | Race/ethnicity | "White", "Black", "Hispanic", "Asian", "Native American", "Other", "Unknown" |
-| gender | categorical | Gender identity | "male", "female", "non_binary", "unknown" |
+| race_ethnicity | categorical | Race/ethnicity | "White (Non-Hispanic)", "Black or African American", "Hispanic or Latino", "Asian", "Native American or Alaska Native", "Native Hawaiian or Pacific Islander", "Two or More Races", "Other", "Unknown", "Prefer not to say" |
+| gender | categorical | Gender identity | "Male", "Female", "Non-binary", "Other", "Unknown", "Prefer not to say" |
 | age_at_arrest | numeric (0-120) | Age at time of arrest | 32 |
-| socioeconomic_proxy | categorical | SES indicator (area-based) | "low", "moderate", "high", "unknown" |
-| education_level | categorical | Highest education completed | "less_than_hs", "hs_ged", "some_college", "bachelors", "graduate", "unknown" |
 
-### Charge Characteristics
-| Field | Type | Description | Values |
-|-------|------|-------------|---------|
-| offense_severity | ordinal | Severity of charged offense | "infraction", "violation", "misdemeanor_second", "misdemeanor_first", "felony_third", "felony_second", "felony_first" |
-| charge_type | categorical | Type of offense | "violent", "property", "drug", "public_order", "white_collar", "other" |
-| is_violent | boolean | Whether offense involves violence | true/false |
-| mandatory_minimum | boolean | Whether charge carries mandatory minimum | true/false |
-| specific_statute | string | Exact statute charged | "TCA 39-13-202" |
-| charge_count | integer | Number of separate charges | 3 |
-
-### Case Processing Timeline
+### Case Timeline Timestamps
 | Field | Type | Description | Example |
 |-------|------|-------------|---------|
 | arrest_date | ISO String | Date of arrest | "2024-01-15" |
-| charge_date | ISO String | Date charges filed | "2024-01-16" |
-| arraignment_date | ISO String | Date of arraignment | "2024-01-20" |
-| plea_date | ISO String | Date of plea entry | "2024-02-01" |
+| filing_date | ISO String | Date charges filed | "2024-01-16" |
 | disposition_date | ISO String | Date case resolved | "2024-03-15" |
-| days_to_disposition | integer | Days from arrest to disposition | 60 |
+| sentencing_date | ISO String | Date of sentencing (if convicted) | "2024-04-01" |
 
-### Outcomes
+### Offense Information
 | Field | Type | Description | Values |
 |-------|------|-------------|---------|
-| disposition | categorical | Final case outcome | "dismissed", "convicted", "acquitted", "diverted", "pending" |
-| conviction | binary | Whether resulted in conviction | 0/1 |
-| conviction_type | categorical | Type of conviction (if convicted) | "guilty_plea", "bench_trial", "jury_trial", "no_contest" |
-| sentence_type | categorical | Sentence imposed | "probation", "jail", "prison", "fine", "community_service", "none" |
-| sentence_months | integer | Length of incarceration (if applicable) | 12 |
-| fine_amount | numeric | Monetary fine imposed | 500.00 |
-| restitution_amount | numeric | Restitution ordered | 1000.00 |
-| probation_months | integer | Length of probation (if applicable) | 24 |
+| offense_severity | ordinal | Severity of charged offense | felony_level_1 (most severe), felony_level_2, ..., felony_level_7 (least severe felony), misdemeanor_a (most severe misdemeanor), misdemeanor_b, misdemeanor_c, misdemeanor_d (least severe misdemeanor), infraction, unknown |
+| offense_description | string | Text description of offense | "Possession with intent to distribute" |
+| statute_code | string | Legal statute violated | "TCA 39-17-417" |
+| charge_type | categorical | Type of offense | "felony", "misdemeanor", "infraction" |
 
-### Data Quality Fields
+### Case Outcomes
+| Field | Type | Description | Values |
+|-------|------|-------------|---------|
+| conviction | binary | Whether resulted in conviction | 0 = no conviction, 1 = conviction |
+| conviction_type | categorical | Type of conviction (if convicted) | "guilty_plea", "trial_conviction", "no_contest", etc. |
+| sentence_months | integer | Length of incarceration sentence in months | 24 |
+| probation_months | integer | Length of probation sentence in months | 12 |
+| fines_amount | numeric | Monetary fines imposed | 500.00 |
+| restitution_amount | numeric | Restitution ordered | 1000.00 |
+| disposition_type | categorical | Final case disposition | "conviction", "dismissal", "acquitted", "diversion", "deferred_prosecution", "nolle_prosequi", "dead_docket" |
+| disposition_description | string | Additional details about disposition | "Case dismissed due to lack of evidence" |
+
+### Processing Metrics
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| days_to_disposition | integer | Days from arrest to disposition | 60 |
+| days_to_sentencing | integer | Days from conviction to sentencing | 30 |
+
+### Court and Legal Actors
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| judge_id | string | Judge identifier | "judge-001" |
+| judge_name | string | Judge name | "Hon. Jane Smith" |
+| prosecutor_office | string | Prosecutor office | "District Attorney's Office" |
+| attorney_type | string | Attorney representation type | "public_defender", "private_attorney", "pro_se" |
+
+### Bail/Bond Information
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| bail_amount | numeric | Bail amount set | 5000.00 |
+| bail_posted | binary | Whether bail was posted | 0 = not posted, 1 = posted |
+
+### Data Quality and Provenance
 | Field | Type | Description |
 |-------|------|-------------|
-| completeness_score | integer (0-100) | Percentage of non-missing core fields |
-| data_quality_flags | string[] | Quality issues detected |
-| missing_fields | string[] | List of fields with missing values |
-| inconsistent_dates | boolean | Whether date sequence is logical |
-| outlier_flags | string[] | Detected statistical outliers |
+| missing_fields | string[] | List of fields that were missing in source data |
+| data_quality_flags | string[] | Quality issues identified during processing |
+| completeness_score | integer (0-100) | Score of data completeness based on non-missing core fields |
 
-### Derived Variables (For Analysis)
-| Field | Type | Description | Calculation |
-|-------|------|-------------|-------------|
-| offense_severity_score | numeric (0-6) | Numeric severity score | infraction=0, violation=1, misd_2=2, misd_1=3, felony_3=4, felony_2=5, felony_1=6 |
-| charge_severity_weight | numeric | Weight for regression models | Based on historical sentencing data |
-| prior_record_proxy_score | numeric (0-4) | Prior record severity | none=0, minor=1, moderate=2, serious=3, unknown=NA |
-| risk_score | numeric | Composite risk score | Function of age, priors, offense type |
-| has_missing_demographics | boolean | True if race/gender/age missing | Derived logic |
+### Additional Case-Specific Data
+| Field | Type | Description |
+|-------|------|-------------|
+| [key: string]: any | flexible | Extension fields for jurisdiction-specific data |
 
 ## Data Quality Assessment Framework
 
 Each case receives a quality score (0-100) based on:
 
 ### Completeness (40 points)
-- Core fields present: case_id, jurisdiction, dates, demographics, charge, outcome (20 points)
+- Core fields present: id, jurisdiction_id, dates, demographics, offense, outcome (20 points)
 - Derived variables calculable (20 points)
 
 ### Consistency (30 points)
-- Logical date sequence (arrest ≤ charge ≤ disposition) (15 points)
+- Logical date sequence (arrest ≤ filing ≤ disposition ≤ sentencing) (15 points)
 - Demographic plausibility (age appropriate for charges) (10 points)
 - Charge-outcome consistency (5 points)
 
@@ -98,31 +106,39 @@ Each case receives a quality score (0-100) based on:
 
 ### Offense Severity Hierarchy
 ```javascript
-const SEVERITY_ORDER = [
-  "infraction",      // 0
-  "violation",       // 1
-  "misdemeanor_second", // 2
-  "misdemeanor_first",  // 3
-  "felony_third",    // 4
-  "felony_second",   // 5
-  "felony_first"     // 6
+const OFFENSE_SEVERITY_LEVELS = [
+  'felony_level_1',   // Most severe (e.g., capital murder)
+  'felony_level_2',   // (e.g., first-degree murder, kidnapping)
+  'felony_level_3',   // (e.g., second-degree murder, rape)
+  'felony_level_4',   // (e.g., robbery, aggravated assault)
+  'felony_level_5',   // (e.g., burglary, drug trafficking)
+  'felony_level_6',   // (e.g., possession with intent, theft)
+  'felony_level_7',   // Least severe felony
+  'misdemeanor_a',    // Most severe misdemeanor
+  'misdemeanor_b',    // (e.g., simple assault, petty theft)
+  'misdemeanor_c',    // (e.g., disorderly conduct, trespassing)
+  'misdemeanor_d',    // Least severe misdemeanor
+  'infraction',       // Traffic violations, minor offenses
+  'unknown'
 ];
 ```
 
-### Charge Type Categories
-- **violent**: homicide, assault, robbery, rape, kidnapping
-- **property**: burglary, theft, motor vehicle theft, arson
-- **drug**: possession, trafficking, manufacturing
-- **public_order**: disorderly conduct, trespassing, loitering
-- **white_collar**: fraud, embezzlement, forgery, tax evasion
-- **other**: traffic, wildlife, regulatory
+### Standardized Demographic Categories (with privacy-preserving options)
+- **Race/Ethnicity**: White (Non-Hispanic), Black or African American, Hispanic or Latino, Asian, Native American or Alaska Native, Native Hawaiian or Pacific Islander, Two or More Races, Other, Unknown, Prefer not to say
+- **Gender**: Male, Female, Non-binary, Other, Unknown, Prefer not to say
 
-### Disposition Mapping for Binary Outcomes
-```javascript
-// For conviction analysis:
-const CONVICTION_DISPOSITIONS = ["convicted", "guilty_plea", "no_contest"];
-const NON_CONVICTION_DISPOSITIONS = ["dismissed", "acquitted", "diverted"];
-```
+### Standardized Outcome Categories
+- conviction, dismissal, acquitted, diversion, deferred_prosecution, nolle_prosequi, dead_docket, unknown
+
+### Data Quality Flag Constants
+- missing_demographics
+- inconsistent_dates
+- invalid_offense_code
+- out_of_range_sentence
+- conflicting_disposition
+- missing_bail_info
+- duplicate_case_id
+- temporal_anomaly
 
 ## Implementation Notes
 
@@ -152,3 +168,4 @@ const NON_CONVICTION_DISPOSITIONS = ["dismissed", "acquitted", "diverted"];
 | 1.0.0 | 2024-01-15 | Initial schema definition |
 | 1.1.0 | 2024-03-01 | Added socioeconomic_proxy, derived variables |
 | 1.2.0 | 2024-06-15 | Enhanced quality assessment framework |
+| 2.0.0 | 2024-10-08 | Complete redesign per PLAN_STATISTICAL_RIGOR.md |

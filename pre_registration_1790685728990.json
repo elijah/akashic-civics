@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "id": "8a213f0f57786269",
+    "created": "2026-09-29T12:42:08.988Z",
+    "version": "1.0.0"
+  },
+  "research_question": "Test",
+  "hypothesis": {
+    "statement": "Test hypothesis",
+    "directional": "one.sided",
+    "alpha": 0.05
+  },
+  "outcome_variable": {
+    "name": "conviction",
+    "definition": "Binary: 1 if convicted, 0 otherwise",
+    "type": "binary"
+  },
+  "predictor_variable": {
+    "name": "race_ethnicity",
+    "levels": [
+      "White",
+      "Black",
+      "Hispanic",
+      "Other"
+    ],
+    "reference_level": "White"
+  },
+  "controls": {
+    "mandatory": [
+      "offense_severity",
+      "charge_type",
+      "age_at_arrest"
+    ],
+    "optional": [],
+    "included": true
+  },
+  "analysis_plan": {
+    "method": "logistic regression",
+    "model_formula": "conviction ~ race_ethnicity + offense_severity + charge_type + age_at_arrest",
+    "software": "R 4.x+",
+    "robust_errors": true
+  },
+  "inclusion_criteria": {
+    "min_cases_per_group": 30,
+    "exclude_pending": true,
+    "exclude_dismissed": true
+  },
+  "observed_effect": null,
+  "observed_p_value": null,
+  "observed_conclusion": null,
+  "discrepancy_notes": null
+}

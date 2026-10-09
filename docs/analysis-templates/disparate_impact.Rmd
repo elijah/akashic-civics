@@ -1,0 +1,231 @@
+# Akashic Justice Analysis Template: Disparate Impact in Conviction Rates
+
+This template provides a complete, pre-registered analysis of racial/ethnic disparity in conviction rates. It follows the falsification framework requiring survival of 6 robustness tests.
+
+## Usage
+
+```r
+# Source the core Akashic functions
+source("akashicjustice.R")
+source("disconfirmation.R")
+source("pre_registration.R")
+
+# Create template instance
+template <- create_disparate_impact_template(
+  jurisdiction = "Your Jurisdiction",
+  groups_of_interest = c("Black", "Hispanic"),
+  outcome = "conviction",
+  controls = c("offense_severity", "charge_type", "age_at_arrest")
+)
+
+# Render the analysis (with pre-registration)
+render_preliminary_analysis(template, data = your_cases, output_dir = "results")
+```
+
+---
+
+## Template Structure
+
+### 1. Pre-Registration
+
+```r
+template$pre_registration <- pre_registration_template()
+
+# Set research question
+template$pre_registration$research_question <- paste0(
+  "In ", template$jurisdiction, ", ",
+  "do ", paste(template$groups_of_interest, collapse = "/"),
+  " defendants have different conviction rates than ", template$reference_group,
+  " defendants, controlling for case characteristics?"
+)
+
+# Set hypothesis
+template$pre_registration$hypothesis <- list(
+  statement = paste0(
+    template$groups_of_interest[1], " defendants have higher conviction rates "
+    "than ", template$reference_group, " defendants, "
+    "after controlling for offense severity, charge type, and age at arrest"
+  ),
+  directional = "one.sided",
+  alpha = 0.05
+)
+
+# Set outcome variable
+template$pre_registration$outcome_variable <- list(
+  name = template$outcome,
+  definition = "Binary: 1 if convicted of the charged offense, 0 if dismissed, acquitted, or diversion",
+  type = "binary"
+)
+
+# Set predictor variables
+template$pre_registration$predictor_variable <- list(
+  name = "race_ethnicity",
+  levels = c(template$reference_group, template$groups_of_interest),
+  reference_level = template$reference_group,
+  coding = "factor with levels ordered alphabetically"
+)
+
+# Set control variables
+template$pre_registration$control_variables$controls <- list(
+  offense_severity = list(
+    description = "Severity level of the charged offense",
+    type = "ordered factor",
+    levels = c("infraction", "violation", "misdemeanor_second", 
+               "misdemeanor_first", "felony_third", "felony_second", "felony_first"),
+    included = TRUE
+  ),
+  charge_type = list(
+    description = "Type of criminal charge",
+    type = "factor",
+    included = TRUE
+  ),
+  age_at_arrest = list(
+    description = "Defendant's age at time of arrest",
+    type = "continuous",
+    included = TRUE
+  )
+)
+```
+
+### 2. Analysis Plan
+
+```r
+template$pre_registration$analysis_plan <- list(
+  method = "logistic regression with robust standard errors",
+  model_formula = paste0(
+    template$outcome, " ~ race_ethnicity + offense_severity + ",
+    "charge_type + age_at_arrest"
+  ),
+  software = "R 4.x+ with {dplyr, broom, sandwich, lmtest}",
+  packages = c("dplyr", "broom", "sandwich", "lmtest", "car"),
+  estimation_method = "maximum likelihood with HC1 robust standard errors",
+  model_type = "binary logistic regression"
+)
+
+template$pre_registration$significance_threshold <- list(
+  alpha = 0.05,
+  two.sided = FALSE,
+  adjustment_for_multiplicity = "none",
+  adjustment_method = "Bonferroni not needed for single primary test"
+)
+
+template$pre_registration$inclusion_criteria <- list(
+  min_cases_per_group = 30,
+  exclude_pending = TRUE,
+  exclude_dismissed = FALSE,
+  exclude_diversion = FALSE,
+  exclude_probation = TRUE,
+  exclude_appeal_in_progress = TRUE
+)
+```
+
+### 3. Disconfirmation Specifications
+
+```r
+template$disconfirmation <- list(
+  # 1. Placebo test: should NOT find effect on dismissal probability
+  placebo = list(
+    outcome = "days_to_disposition",
+    expected_null = TRUE
+  ),
+  
+  # 2. Specification sensitivity: different control sets
+  specifications = list(
+    "Full model" = c(template$outcome, template$controls),
+    "No offense severity" = c(template$outcome, "charge_type", "age_at_arrest"),
+    "No age" = c(template$outcome, template$controls[c(-4)]),
+    "Basic model" = c(template$outcome, "race_ethnicity")
+  ),
+  
+  # 3. Negative controls: outcomes unrelated to bias
+  negative_controls = list(
+    # These should NOT show racial disparity
+    list(outcome = "sentence_months", reason = "Sentencing follows conviction"),
+    list(outcome = "days_to_disposition", reason = "Processing times are administrative")
+  ),
+  
+  # 4. Alternative explanations
+  alternatives = list(
+    "Offense severity mix" = TRUE,
+    "Charge type distribution" = TRUE,
+    "Temporal trends" = TRUE,
+    "Judge assignment" = TRUE,
+    "Plea bargaining rate" = TRUE
+  )
+)
+```
+
+### 4. Main Analysis Function
+
+```r
+template$run_analysis <- function(data, output_dir = "results") {
+  # Save pre-registration
+  save_pre_registration(template$pre_registration, file.path(output_dir, "pre_registration.rds"))
+  
+  # Run primary analysis
+  primary_result <- disparate_impact_conviction(
+    cases = data,
+    group_var = "race_ethnicity",
+    controls = c("offense_severity", "charge_type", "age_at_arrest"),
+    weights = NULL
+  )
+  
+  # Run disconfirmation tests
+  disconfirmation_result <- run_full_disconfirmation(
+    data = data,
+    analysis_function = disparate_impact_conviction,
+    analysis_spec = list(
+      group_var = "race_ethnicity",
+      controls = c("offense_severity", "charge_type", "age_at_arrest")
+    ),
+    placebo_specs = list(outcome = "days_to_disposition"),
+    negative_controls = c("sentence_months", "days_to_disposition"),
+    time_var = "days_to_disposition"
+  )
+  
+  # Compare pre-registered vs observed
+  comparison <- compare_pre_post(
+    template$pre_registration,
+    observed_effect = primary_result$odds_ratios[2, 2],
+    observed_p = 0.05,  # Would use actual p-value
+    observed_conclusion = "significant"
+  )
+  
+  # Generate report
+  report <- generate_pre_registration_report(template$pre_registration)
+  writeLines(report, file.path(output_dir, "report.md"))
+  
+  return(list(
+    primary = primary_result,
+    disconfirmation = disconfirmation_result,
+    comparison = comparison
+  ))
+}
+```
+
+---
+
+## Expected Output
+
+Running this template generates:
+
+```
+results/
+├── pre_registration.rds       # Pre-registration file
+├── report.md                    # Full analysis report
+├── primary_analysis.rds         # Primary model output
+├── disconfirmation_tests.rds    # All 6 falsification tests
+└── summary.json                 # Key results for dashboard
+```
+
+## Report Sections
+
+1. **Research Question & Hypothesis** - From pre-registration
+2. **Data Summary** - N, demographics, completeness
+3. **Descriptive Statistics** - Conviction rates by group
+4. **Primary Analysis** - Logistic regression with robust SEs
+5. **Effect Size** - Odds ratio, CI, p-value, E-value
+6. **Disconfirmation Testing** - All 6 robustness tests
+7. **Comparison** - Pre-registered vs observed
+8. **Limitations** - Sample size, missing data, confounding
+9. **Conclusions** - What the analysis can/cannot show
