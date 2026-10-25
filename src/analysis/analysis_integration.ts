@@ -141,7 +141,7 @@ export class AnalysisPipeline {
         normalized.cases,
         rOptions
       );
-    } catch (error) {
+    } catch (_error) {
       // Fallback: compute results locally if R is unavailable
       analysisResult = this.computeLocalAnalysis(normalized.cases, options);
     }

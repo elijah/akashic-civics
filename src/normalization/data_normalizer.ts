@@ -44,6 +44,26 @@ export interface NormalizationResult {
   };
 }
 
+/**
+ * Schema validation results for raw input data
+ */
+export interface ValidationResults {
+  isValid: boolean;
+  issues: string[];
+  warnings: string[];
+  rawCount: number;
+  validCount: number;
+  invalidCount: number;
+  summary: {
+    missingIds: number;
+    missingJurisdiction: number;
+    malformedDates: number;
+    negativeNumbers: number;
+    unrecognizedRaces: number;
+    unrecognizedGenders: number;
+  };
+}
+
 export class DataNormalizer {
   private transformationHistory: TransformationStep[] = [];
   
@@ -51,6 +71,117 @@ export class DataNormalizer {
     private sourceConnector: string = 'unknown',
     private sourceVersion: string = '1.0.0'
   ) {}
+  
+  /**
+   * Validate raw input data before normalization
+   * Returns detailed validation results with issues and warnings
+   */
+  validateRawData(rawCases: any[]): ValidationResults {
+    const results: ValidationResults = {
+      isValid: true,
+      issues: [],
+      warnings: [],
+      rawCount: rawCases.length,
+      validCount: 0,
+      invalidCount: 0,
+      summary: {
+        missingIds: 0,
+        missingJurisdiction: 0,
+        malformedDates: 0,
+        negativeNumbers: 0,
+        unrecognizedRaces: 0,
+        unrecognizedGenders: 0,
+      }
+    };
+    
+    if (!Array.isArray(rawCases)) {
+      results.isValid = false;
+      results.issues.push('Input must be an array');
+      return results;
+    }
+    
+    for (const raw of rawCases) {
+      if (!raw || typeof raw !== 'object') {
+        results.invalidCount++;
+        results.issues.push('Invalid case: not an object');
+        continue;
+      }
+      
+      // Check for case ID
+      const id = raw.id || raw.case_id || raw.caseNumber;
+      if (!id || String(id).trim() === '') {
+        results.summary.missingIds++;
+        results.warnings.push('Case missing ID');
+      }
+      
+      // Check for jurisdiction
+      const jurisdiction = raw.jurisdiction_id || raw.jurisdictionId || raw.county;
+      if (!jurisdiction || String(jurisdiction).trim() === '') {
+        results.summary.missingJurisdiction++;
+        results.warnings.push('Case missing jurisdiction');
+      }
+      
+      // Check for valid dates
+      const dateFields = ['arrest_date', 'arrestDate', 'date_of_arrest',
+        'filing_date', 'filingDate', 'filed_date',
+        'disposition_date', 'dispositionDate',
+        'sentencing_date', 'sentencingDate', 'sentence_date'];
+      for (const field of dateFields) {
+        if (raw[field]) {
+          const date = new Date(raw[field]);
+          if (isNaN(date.getTime())) {
+            results.summary.malformedDates++;
+            results.warnings.push(`Invalid date in field: ${field}`);
+          }
+        }
+      }
+      
+      // Check for negative numbers in numeric fields
+      const numericFields = ['age_at_arrest', 'age', 'sentence_months',
+        'sentenceMonths', 'probation_months', 'probationMonths',
+        'fines_amount', 'fines', 'fine_amount', 'bail_amount', 'bail'];
+      for (const field of numericFields) {
+        if (raw[field] !== undefined && raw[field] !== null) {
+          const val = typeof raw[field] === 'number' ? raw[field] : parseFloat(raw[field]);
+          if (!isNaN(val) && val < 0) {
+            results.summary.negativeNumbers++;
+            results.warnings.push(`Negative value in ${field}: ${raw[field]}`);
+          }
+        }
+      }
+      
+      // Check for recognized race/ethnicity
+      const race = raw.race_ethnicity || raw.race || raw.ethnicity;
+      if (race && String(race).trim() !== '') {
+        const raceLower = String(race).trim().toLowerCase();
+        const knownRaces = ['white', 'black', 'african american', 'hispanic', 'hispanic/latino',
+          'hispanic or latino', 'latino', 'latina', 'asian', 'native american',
+          'indian', 'native hawaiian', 'pacific islander', 'two or more',
+          'multiracial', 'other', 'unknown', 'prefer not to say'];
+        if (!knownRaces.includes(raceLower)) {
+          results.summary.unrecognizedRaces++;
+          results.warnings.push(`Unrecognized race: ${race}`);
+        }
+      }
+      
+      // Check for recognized gender
+      const gender = raw.gender;
+      if (gender && String(gender).trim() !== '') {
+        const genderLower = String(gender).trim().toLowerCase();
+        const knownGenders = ['male', 'm', 'female', 'f', 'non-binary', 'nonbinary',
+          'other', 'unknown', 'prefer not to say'];
+        if (!knownGenders.includes(genderLower)) {
+          results.summary.unrecognizedGenders++;
+          results.warnings.push(`Unrecognized gender: ${gender}`);
+        }
+      }
+      
+      results.validCount++;
+    }
+    
+    results.isValid = results.invalidCount === 0;
+    return results;
+  }
   
   /**
    * Normalize raw case data into the standardized schema
@@ -90,7 +221,7 @@ export class DataNormalizer {
         }
         
         validCases.push(normalized);
-      } catch (error) {
+      } catch (_error) {
         rejectedCases.push(rawCase);
         qualityIssues['normalization_error'] = (qualityIssues['normalization_error'] || 0) + 1;
       }
@@ -199,8 +330,11 @@ export class DataNormalizer {
    */
   private normalizeString(...values: (string | undefined | null)[]): string | undefined {
     for (const val of values) {
-      if (val != null && val !== '' && val !== 'null' && val !== 'undefined') {
-        return String(val).trim();
+      if (val != null && val !== 'null' && val !== 'undefined') {
+        const trimmed = String(val).trim();
+        if (trimmed !== '') {
+          return trimmed;
+        }
       }
     }
     return undefined;
@@ -208,28 +342,96 @@ export class DataNormalizer {
   
   /**
    * Normalize a numeric field
+   * Handles strings with currency symbols, thousands separators, and decimals
    */
   private normalizeNumber(...values: (number | string | undefined | null)[]): number | undefined {
     for (const val of values) {
       if (val == null) continue;
       if (typeof val === 'number' && !isNaN(val)) return val;
-      if (typeof val === 'string') {
-        const parsed = parseFloat(val.replace(/[^0-9.\-]/g, ''));
-        if (!isNaN(parsed)) return parsed;
+if (typeof val === 'string') {
+      // Handle parentheses as negative numbers
+      let isNegative = false;
+      let cleaned = val;
+      if (val.startsWith('(') && val.endsWith(')')) {
+        isNegative = true;
+        cleaned = val.substring(1, val.length - 1);
       }
+      
+      // Remove common formatting: currency symbols, thousands separators
+      cleaned = cleaned
+        .replace(/[^0-9.\-]/g, '')
+        .replace(/--/g, '-');           // Handle malformed negative markers
+      const parsed = parseFloat(cleaned);
+      if (!isNaN(parsed)) return isNegative ? -parsed : parsed;
+    }
     }
     return undefined;
   }
   
   /**
    * Normalize a date field
+   * Tries Date constructor, then common string formats: MM/DD/YYYY, YYYY-MM-DD, DD-MM-YYYY
+   * Validates that parsed date matches input components to reject invalid dates like Feb 30
    */
   private normalizeDate(...values: (string | undefined | null)[]): string | undefined {
     for (const val of values) {
       if (val == null || val === '') continue;
-      const date = new Date(val as string);
-      if (!isNaN(date.getTime())) {
-        return date.toISOString();
+      const str = String(val).trim();
+      
+      // Helper: validate that a constructed date matches expected year/month/day
+      const matchesExpectedDate = (d: Date, y: number, m: number, day: number): boolean => {
+        return !isNaN(d.getTime()) &&
+               d.getFullYear() === y &&
+               d.getMonth() === m - 1 &&
+               d.getDate() === day;
+      };
+      
+      // Try ISO/numeric format first (YYYY-MM-DD or YYYY/MM/DD)
+      const isoMatch = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+      if (isoMatch) {
+        const [, year, month, day] = isoMatch;
+        const y = parseInt(year), m = parseInt(month), d = parseInt(day);
+        const parsed = new Date(y, m - 1, d);
+        if (matchesExpectedDate(parsed, y, m, d)) {
+          // Use UTC to ensure consistent midnight output
+          return new Date(Date.UTC(y, m - 1, d)).toISOString();
+        }
+        // Invalid date (e.g., Feb 30) - continue to try other formats
+      } else {
+        // Try native Date constructor for other formats
+        const date = new Date(str);
+        if (!isNaN(date.getTime())) {
+          // For non-ISO formats, just accept if date is valid
+          return date.toISOString();
+        }
+      }
+      
+      // Try MM/DD/YYYY format
+      const mmddyy = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (mmddyy) {
+        const [, month, day, year] = mmddyy;
+        const y = parseInt(year), m = parseInt(month), d = parseInt(day);
+        const parsed = new Date(y, m - 1, d);
+        if (matchesExpectedDate(parsed, y, m, d)) {
+          return new Date(Date.UTC(y, m - 1, d)).toISOString();
+        }
+      }
+      
+      // Try DD-MM-YYYY or DD/MM/YYYY format
+      const ddmm = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+      if (ddmm) {
+        const [, a, b, year] = ddmm;
+        const y = parseInt(year), v1 = parseInt(a), v2 = parseInt(b);
+        // Try DD/MM/YYYY interpretation (a=day, b=month)
+        const d1 = new Date(y, v2 - 1, v1);
+        if (matchesExpectedDate(d1, y, v2, v1)) {
+          return new Date(Date.UTC(y, v2 - 1, v1)).toISOString();
+        }
+        // Try MM/DD/YYYY interpretation (a=month, b=day)
+        const d2 = new Date(y, v1 - 1, v2);
+        if (matchesExpectedDate(d2, y, v1, v2)) {
+          return new Date(Date.UTC(y, v1 - 1, v2)).toISOString();
+        }
       }
     }
     return undefined;
@@ -366,7 +568,7 @@ export class DataNormalizer {
     for (const val of values) {
       if (val == null || val === '') continue;
       const normalized = String(val).trim().toLowerCase();
-      if (['felony', 'misdemeanor', 'infraction', 'violation', 'petty offense'].includes(normalized)) {
+      if (['felony', 'misdemeanor', 'infraction', 'violation', 'petty offense', 'traffic'].includes(normalized)) {
         return normalized;
       }
     }

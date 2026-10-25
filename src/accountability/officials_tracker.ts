@@ -252,7 +252,7 @@ export class OfficialsTracker {
     // Check for extreme imbalance
     const total = cases.length;
     const maxCount = Math.max(...Object.values(countsByGroup));
-    const maxGroup = Object.entries(countsByGroup).find(([_, count]) => count === maxCount)?.[0];
+    const maxGroup = Object.entries(countsByGroup).find(([, count]) => count === maxCount)?.[0];
     const maxProp = maxCount / total;
 
     if (maxProp > 0.9) {
@@ -313,7 +313,7 @@ export class OfficialsTracker {
     const disparityScores = officials.map(official => {
       // Find largest absolute disparity
       let maxDisparity = 0;
-      for (const [_group, gap] of Object.entries(official.disparity_scores)) {
+      for (const [, gap] of Object.entries(official.disparity_scores)) {
         const absGap = Math.abs(gap);
         if (absGap > maxDisparity) {
           maxDisparity = absGap;

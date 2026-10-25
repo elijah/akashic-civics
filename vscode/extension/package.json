@@ -1,0 +1,57 @@
+{
+  "name": "akashic-civics",
+  "displayName": "Akashic Civics",
+  "description": "Criminal justice disparity analysis tools",
+  "version": "1.0.0",
+  "publisher": "akashic-civics",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "activationEvents": [
+    "onCommand:akashic-civics.runAnalysis",
+    "onCommand:akashic-civics.loadCases"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "akashic-civics.runAnalysis",
+        "title": "Run Disparity Analysis",
+        "category": "Akashic Civics"
+      },
+      {
+        "command": "akashic-civics.loadCases",
+        "title": "Load Case Dataset",
+        "category": "Akashic Civics"
+      }
+    ],
+    "configuration": {
+      "type": "object",
+      "title": "Akashic Civics",
+      "properties": {
+        "akashic-civics.defaultJurisdiction": {
+          "type": "string",
+          "description": "Default jurisdiction code",
+          "default": ""
+        },
+        "akashic-civics.confidenceLevel": {
+          "type": "number",
+          "description": "Default confidence level",
+          "default": 0.95
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/node": "^20.x",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.0.0"
+  }
+}

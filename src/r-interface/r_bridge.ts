@@ -49,15 +49,46 @@ export interface RAnalysisOptions {
 }
 
 export class RInterface {
-  private rScriptPath: string;
-  private analysisTemplatesDir: string;
-  
+  protected rScriptPath: string;
+  protected analysisTemplatesDir: string;
+  private tempFileCounter: number = 0;
+   
   constructor(
     rScriptPath: string = '/usr/bin/Rscript',
     analysisTemplatesDir: string = join(__dirname, '../../docs/analysis-templates')
   ) {
     this.rScriptPath = rScriptPath;
     this.analysisTemplatesDir = analysisTemplatesDir;
+  }
+  
+  /**
+   * Validate input cases for the analysis pipeline
+   */
+  validateInputCases(cases: any[]): { valid: boolean; issues: string[] } {
+    const issues: string[] = [];
+    
+    if (!Array.isArray(cases)) {
+      issues.push('Input must be an array');
+      return { valid: false, issues };
+    }
+    
+    if (cases.length === 0) {
+      issues.push('No cases provided for analysis');
+      return { valid: false, issues };
+    }
+    
+    cases.forEach((caseData, idx) => {
+      if (!caseData || typeof caseData !== 'object') {
+        issues.push(`Case ${idx} is not a valid object`);
+        return;
+      }
+      
+      if (!caseData.id || typeof caseData.id !== 'string') {
+        issues.push(`Case ${idx} missing valid ID`);
+      }
+    });
+    
+    return { valid: issues.length === 0, issues };
   }
   
   /**
@@ -68,8 +99,17 @@ export class RInterface {
     options: RAnalysisOptions,
     preRegistrationPath?: string
   ): Promise<RAnalysisResult> {
-    const tempInput = join(tmpdir(), `akashic_input_${Date.now()}.json`);
-    const tempOutput = join(tmpdir(), `akashic_output_${Date.now()}.json`);
+    // Validate input first
+    const validation = this.validateInputCases(cases as any);
+    if (!validation.valid) {
+      throw new Error(`Invalid input data: ${validation.issues.join('; ')}`);
+    }
+    
+    // Use unique temp files to prevent race conditions
+    const uniqueId = `${Date.now()}-${this.tempFileCounter++}-${Math.random().toString(36).substring(2, 9)}`;
+    const tempInput = join(tmpdir(), `akashic_input_${uniqueId}.json`);
+    const tempOutput = join(tmpdir(), `akashic_output_${uniqueId}.json`);
+    const tempScript = join(tmpdir(), `akashic_script_${uniqueId}.R`);
     
     try {
       const inputData = {
@@ -98,14 +138,26 @@ export class RInterface {
       const result = await this.executeRScript(tempInput, tempOutput, options, preRegistrationPath);
       
       if (result.status !== 0) {
-        throw new Error(`R script failed with code ${result.status}: ${result.stderr}`);
+        const errMsg = result.stderr || `R script failed with code ${result.status}`;
+        throw new Error(`R analysis failed: ${errMsg}`);
+      }
+      
+      // Verify output file exists before reading
+      if (!existsSync(tempOutput)) {
+        throw new Error('R analysis completed but output file was not created');
       }
       
       const output = JSON.parse(readFileSync(tempOutput, 'utf-8'));
       return this.validateResult(output);
       
+    } catch (error) {
+      // Re-throw known errors, wrap unknown errors
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Unexpected error during R analysis execution');
     } finally {
-      this.cleanupTempFiles(tempInput, tempOutput);
+      this.cleanupTempFiles(tempInput, tempOutput, tempScript);
     }
   }
   
@@ -231,7 +283,7 @@ write(toJSON(result, auto_unbox = TRUE), "${outputPath}")
   /**
    * Sanitize a case for R consumption
    */
-  private sanitizeCaseForR(c: LegalJusticeCase): any {
+  protected sanitizeCaseForR(c: LegalJusticeCase): any {
     return {
       id: c.id,
       jurisdiction_id: c.jurisdiction_id,
@@ -254,17 +306,29 @@ write(toJSON(result, auto_unbox = TRUE), "${outputPath}")
    * Validate R result structure
    */
   private validateResult(data: any): RAnalysisResult {
+    if (data === null || data === undefined) {
+      throw new Error('Invalid R result: not an object');
+    }
+    if (typeof data !== 'object') {
+      throw new Error('Invalid R result: not an object');
+    }
     if (!data.analysis_type) {
       throw new Error('Invalid R result: missing analysis_type');
     }
+    // Validate numeric fields
+    const effectSize = typeof data.effect_size === 'number' ? data.effect_size : 0;
+    const pValue = typeof data.p_value === 'number' ? data.p_value : 1;
+    const ci = Array.isArray(data.confidence_interval) && data.confidence_interval.length === 2
+      ? data.confidence_interval : [0, 0];
+    
     return {
       analysis_type: data.analysis_type || 'unknown',
       model_summary: data.model_summary || {},
-      effect_size: data.effect_size ?? 0,
-      p_value: data.p_value ?? 1,
-      confidence_interval: data.confidence_interval || [0, 0],
-      odds_ratio: data.odds_ratio,
-      hazard_ratio: data.hazard_ratio,
+      effect_size: effectSize,
+      p_value: pValue,
+      confidence_interval: ci,
+      odds_ratio: typeof data.odds_ratio === 'number' ? data.odds_ratio : undefined,
+      hazard_ratio: typeof data.hazard_ratio === 'number' ? data.hazard_ratio : undefined,
       coefficients: data.coefficients || {},
       model_diagnostics: data.model_diagnostics || { aic: 0, bic: 0, log_likelihood: 0 },
       data_quality: data.data_quality || { n_cases: 0, missing_rate: 0, completeness_score: 0 },
@@ -278,7 +342,9 @@ write(toJSON(result, auto_unbox = TRUE), "${outputPath}")
   private cleanupTempFiles(...paths: string[]): void {
     for (const path of paths) {
       try {
-        if (existsSync(path)) unlinkSync(path);
+        if (path && existsSync(path)) {
+          unlinkSync(path);
+        }
       } catch { /* ignore cleanup errors */ }
     }
   }

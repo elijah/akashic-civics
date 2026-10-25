@@ -1,24 +1,68 @@
 {
   "name": "akashic-civics",
-  "version": "1.0.0",
-  "description": "Methodologically Rigorous Legal Bias Analysis System",
+  "version": "1.17.0",
+  "description": "Criminal justice disparity analysis platform",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    },
+    "./documentation": {
+      "types": "./dist/documentation/index.d.ts",
+      "import": "./dist/documentation/index.js",
+      "require": "./dist/documentation/index.js"
+    },
+    "./statistical": {
+      "types": "./dist/statistical/index.d.ts",
+      "import": "./dist/statistical/index.js",
+      "require": "./dist/statistical/index.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.js"
+    }
+  },
   "files": [
     "dist/",
     "src/",
-    "docs/analysis-templates/"
+    "docs/",
+    "playground/",
+    "packages/"
   ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "jest",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "cli": "npm run build && node scripts/advanced_cli/akashic.js",
+    "cli:init": "npm run build && node scripts/advanced_cli/akashic.js init",
+    "cli:status": "npm run build && node scripts/advanced_cli/akashic.js status",
+    "lint": "eslint src/**/*.ts --max-warnings=0",
+    "lint:fix": "eslint src/**/*.ts --fix",
+    "test:mutation": "stryker run",
+    "test:fuzz": "jest --runInBand src/testing/__tests__/fuzz_tests.test.ts || true",
+    "docs:api": "typedoc --options typedoc.json",
+    "docs:serve": "npx http-server docs/api -p 8080",
+    "format": "prettier --write src/**/*.ts",
+    "format:check": "prettier --check src/**/*.ts",
+    "verify": "bash scripts/verify_contribution.sh",
+    "qc": "npm run lint && npx tsc --noEmit && npm test -- --coverage=false",
+    "publish:py": "cd packages/akashic-civics-py && python -m build && twine upload dist/*",
+    "publish:r": "cd packages/akashic-civics-r && R CMD INSTALL . && R CMD check ."
+  },
+  "bin": {
+    "akashic": "scripts/advanced_cli/akashic.js"
   },
   "keywords": [
-    "legal-justice",
+    "criminal-justice",
+    "disparity",
+    "statistics",
+    "civics",
     "bias-analysis",
-    "statistical-rigor",
     "disconfirmation-testing",
     "pre-registration",
     "civic-data"
@@ -26,24 +70,36 @@
   "author": "Akashic Civics Project",
   "license": "MIT",
   "peerDependencies": {
-    "typescript": "^4.0.0 || ^5.0.0"
+    "typescript": "^4.0.0 || ^5.00"
   },
-   "devDependencies": {
+  "devDependencies": {
+    "@stryker-mutator/core": "^10.1.1",
+    "@stryker-mutator/jest-runner": "^10.1.1",
     "@types/jest": "^29.0.0",
     "@types/node": "^18.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.72.0",
+    "@typescript-eslint/parser": "^8.72.0",
+    "fast-check": "^3.23.2",
     "jest": "^29.0.0",
     "ts-jest": "^29.0.0",
-    "typescript": "^4.9.0"
+    "typedoc": "^0.28.20",
+    "typedoc-plugin-markdown": "^4.14.1",
+    "typescript": "^5.9.3",
+    "build": "^1.0.0",
+    "twine": "^5.0.0"
   },
   "engines": {
     "node": ">=14.0.0"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com:elijah/akashic-civics.git"
+    "url": "https://github.com/elijah/akashic-civics.git"
   },
   "bugs": {
     "url": "https://github.com/elijah/akashic-civics/issues"
   },
-  "homepage": "https://github.com/elijah/akashic-civics#readme"
+  "homepage": "https://github.com/elijah/akashic-civics#readme",
+  "dependencies": {
+    "commander": "^14.0.3"
+  }
 }

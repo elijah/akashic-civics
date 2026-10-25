@@ -1,7 +1,24 @@
-import { DisparityVisualizer, VizConfig, VizSpec } from '../disparity_visualizer';
+import { DisparityVisualizer, VizConfig, VizSpec, generateEmbedCode } from '../disparity_visualizer';
+
+const createBaseConfig = (type: 'bar' | 'trend' | 'heatmap' | 'judge' | 'sentence' | 'disposition' = 'bar', overrides: Record<string, any> = {}): VizConfig => ({
+  type,
+  title: 'Test Chart',
+  data: [],
+  config: {
+    primary_group: 'Black',
+    reference_group: 'White',
+    group_var: 'race_ethnicity',
+    metric: 'conviction_rate',
+    ...overrides,
+  },
+});
 
 describe('DisparityVisualizer', () => {
-  const viz = new DisparityVisualizer();
+  let viz: DisparityVisualizer;
+
+  beforeEach(() => {
+    viz = new DisparityVisualizer();
+  });
 
   it('should initialize properly', () => {
     expect(viz).toBeDefined();
@@ -9,25 +26,12 @@ describe('DisparityVisualizer', () => {
   });
 
   it('should generate bar chart specification for conviction rates', () => {
-    const config: VizConfig = {
-      type: 'bar',
-      title: 'Test Bar Chart',
-      data: [],
-      config: {
-        primary_group: 'Black',
-        reference_group: 'White',
-        group_var: 'race_ethnicity',
-        metric: 'conviction_rate',
-        time_var: undefined,
-        min_cases: 30,
-      },
-    };
+    const config = createBaseConfig('bar');
+    const spec = viz.barChartConvictionRates(config);
 
-    const spec: VizSpec = viz.barChartConvictionRates(config);
-    
     expect(spec).toBeDefined();
     expect(spec.chart_type).toBe('bar');
-    expect(spec.chart_title).toBe('Test Bar Chart');
+    expect(spec.chart_title).toBe('Test Chart');
     expect(spec.x_axis.label).toBe('race ethnicity');
     expect(spec.x_axis.field).toBe('race_ethnicity');
     expect(spec.y_axis.label).toBe('conviction rate (%)');
@@ -39,26 +43,13 @@ describe('DisparityVisualizer', () => {
     expect(spec.audience_notes.length).toBeGreaterThan(0);
   });
 
-  it('should generate trend line specification for disparity over time', () => {
-    const config: VizConfig = {
-      type: 'trend',
-      title: 'Test Trend Line',
-      data: [],
-      config: {
-        primary_group: 'Black',
-        reference_group: 'White',
-        group_var: 'race_ethnicity',
-        metric: 'conviction_rate',
-        time_var: 'year',
-        min_cases: 30,
-      },
-    };
+  it('should generate trend line specification for conviction rates', () => {
+    const config = createBaseConfig('trend', { time_var: 'year' });
+    const spec = viz.trendLineDisparity(config);
 
-    const spec: VizSpec = viz.trendLineDisparity(config);
-    
     expect(spec).toBeDefined();
     expect(spec.chart_type).toBe('line');
-    expect(spec.chart_title).toBe('Test Trend Line');
+    expect(spec.chart_title).toBe('Test Chart');
     expect(spec.x_axis.label).toBe('Time Period');
     expect(spec.x_axis.field).toBe('year');
     expect(spec.y_axis.label).toBe('Disparity (percentage points gap)');
@@ -69,25 +60,12 @@ describe('DisparityVisualizer', () => {
   });
 
   it('should generate heatmap specification for offense type vs race gap', () => {
-    const config: VizConfig = {
-      type: 'heatmap',
-      title: 'Test Heatmap',
-      data: [],
-      config: {
-        primary_group: 'Black',
-        reference_group: 'White',
-        group_var: 'race_ethnicity',
-        metric: 'conviction_rate',
-        time_var: undefined,
-        min_cases: 30,
-      },
-    };
+    const config = createBaseConfig('heatmap');
+    const spec = viz.heatmapDisparity(config);
 
-    const spec: VizSpec = viz.heatmapDisparity(config);
-    
     expect(spec).toBeDefined();
     expect(spec.chart_type).toBe('heatmap');
-    expect(spec.chart_title).toBe('Test Heatmap');
+    expect(spec.chart_title).toBe('Test Chart');
     expect(spec.x_axis.label).toBe('Offense Type');
     expect(spec.x_axis.field).toBe('charge_type');
     expect(spec.y_axis.label).toBe('Demographic Group');
@@ -99,25 +77,12 @@ describe('DisparityVisualizer', () => {
   });
 
   it('should generate judge comparison specification', () => {
-    const config: VizConfig = {
-      type: 'judge',
-      title: 'Test Judge Chart',
-      data: [],
-      config: {
-        primary_group: 'Black',
-        reference_group: 'White',
-        group_var: 'race_ethnicity',
-        metric: 'conviction_rate',
-        time_var: undefined,
-        min_cases: 30,
-      },
-    };
+    const config = createBaseConfig('judge');
+    const spec = viz.judgeComparison(config);
 
-    const spec: VizSpec = viz.judgeComparison(config);
-    
     expect(spec).toBeDefined();
     expect(spec.chart_type).toBe('bar');
-    expect(spec.chart_title).toBe('Test Judge Chart');
+    expect(spec.chart_title).toBe('Test Chart');
     expect(spec.x_axis.label).toBe('Judge Name');
     expect(spec.x_axis.field).toBe('judge_name');
     expect(spec.y_axis.label).toBe('Conviction Rate Gap (percentage points)');
@@ -128,25 +93,12 @@ describe('DisparityVisualizer', () => {
   });
 
   it('should generate sentence distribution specification', () => {
-    const config: VizConfig = {
-      type: 'sentence',
-      title: 'Test Sentence Chart',
-      data: [],
-      config: {
-        primary_group: 'Black',
-        reference_group: 'White',
-        group_var: 'race_ethnicity',
-        metric: 'sentence_months',
-        time_var: undefined,
-        min_cases: 30,
-      },
-    };
+    const config = createBaseConfig('sentence', { group_var: 'race_ethnicity' });
+    const spec = viz.sentenceDistribution(config);
 
-    const spec: VizSpec = viz.sentenceDistribution(config);
-    
     expect(spec).toBeDefined();
     expect(spec.chart_type).toBe('histogram');
-    expect(spec.chart_title).toBe('Test Sentence Chart');
+    expect(spec.chart_title).toBe('Test Chart');
     expect(spec.x_axis.label).toBe('Sentence Length (months)');
     expect(spec.x_axis.field).toBe('sentence_months');
     expect(spec.y_axis.label).toBe('Number of Cases');
@@ -157,25 +109,12 @@ describe('DisparityVisualizer', () => {
   });
 
   it('should generate disposition flow specification', () => {
-    const config: VizConfig = {
-      type: 'disposition',
-      title: 'Test Disposition Chart',
-      data: [],
-      config: {
-        primary_group: 'Black',
-        reference_group: 'White',
-        group_var: 'race_ethnicity',
-        metric: 'disposition_type',
-        time_var: undefined,
-        min_cases: 30,
-      },
-    };
+    const config = createBaseConfig('disposition');
+    const spec = viz.dispositionFlow(config);
 
-    const spec: VizSpec = viz.dispositionFlow(config);
-    
     expect(spec).toBeDefined();
     expect(spec.chart_type).toBe('stacked');
-    expect(spec.chart_title).toBe('Test Disposition Chart');
+    expect(spec.chart_title).toBe('Test Chart');
     expect(spec.x_axis.label).toBe('Demographic Group');
     expect(spec.x_axis.field).toBe('race_ethnicity');
     expect(spec.y_axis.label).toBe('Proportion of Cases (%)');
@@ -185,43 +124,237 @@ describe('DisparityVisualizer', () => {
     expect(Array.isArray(spec.audience_notes)).toBe(true);
   });
 
-  it('should handle all visualization types', () => {
-    const vizTypes = ['bar', 'trend', 'heatmap', 'judge', 'sentence', 'disposition'] as const;
-    
-    for (const type of vizTypes) {
+  describe('autoSelectViz', () => {
+    it('should auto-select trend chart with time_var and gap metric', () => {
       const config: VizConfig = {
-        type,
-        title: `Test ${type} Chart`,
+        type: 'trend',
+        title: 'Trend Chart',
+        data: [{ year: 2020 }, { year: 2021 }],
+        config: {
+          primary_group: 'Black',
+          reference_group: 'White',
+          group_var: 'race_ethnicity',
+          metric: 'gap',
+          time_var: 'year',
+        },
+      };
+
+      const spec = viz.autoSelectViz(config.data, config);
+      expect(spec.chart_type).toBe('line');
+      expect(spec.chart_title).toContain('Trend');
+    });
+
+    it('should auto-select judge comparison when judge_name is present', () => {
+      const config: VizConfig = createBaseConfig('judge');
+      config.config.group_var = 'judge_name';
+
+      const data = [
+        { judge_name: 'Judge A', race_ethnicity: 'Black' },
+        { judge_name: 'Judge B', race_ethnicity: 'White' },
+      ];
+
+      const spec = viz.autoSelectViz(data, config);
+      expect(spec.chart_type).toBe('bar');
+      expect(spec.chart_title).toBe('Test Chart'); // Uses provided title
+    });
+
+    it('should auto-select sentence distribution for sentence_length metric', () => {
+      const config: VizConfig = createBaseConfig('sentence');
+      config.config.metric = 'sentence_length';
+
+      const spec = viz.autoSelectViz([], config);
+      expect(spec.chart_type).toBe('histogram');
+      expect(spec.chart_title).toBe('Test Chart'); // Uses provided title
+    });
+
+    it('should auto-select disposition flow for disposition metric', () => {
+      const config: VizConfig = createBaseConfig('disposition');
+      config.config.metric = 'disposition';
+
+      const spec = viz.autoSelectViz([], config);
+      expect(spec.chart_type).toBe('stacked');
+      expect(spec.chart_title).toBe('Test Chart'); // Uses provided title
+    });
+
+    it('should auto-select heatmap for large datasets with charge_type', () => {
+      const data = Array.from({ length: 25 }, (_, i) => ({
+        charge_type: `charge_${i}`,
+        race_ethnicity: 'Black',
+      }));
+
+      const spec = viz.autoSelectViz(data, createBaseConfig());
+      expect(spec.chart_type).toBe('heatmap');
+      expect(spec.y_axis.field).toBe('race_ethnicity');
+    });
+
+    it('should default to bar chart when no other conditions match', () => {
+      const config = createBaseConfig('bar');
+
+      const spec = viz.autoSelectViz([], config);
+      expect(spec.chart_type).toBe('bar');
+      expect(spec.chart_title).toBe('Test Chart'); // Uses provided title
+    });
+
+    it('should use custom title if provided', () => {
+      const config: VizConfig = createBaseConfig();
+      config.title = 'Custom Title';
+
+      const spec = viz.autoSelectViz([], config);
+      expect(spec.chart_title).toBe('Custom Title');
+    });
+
+    it('should handle missing group_var with default', () => {
+      const config: VizConfig = {
+        type: 'bar',
+        title: 'Test',
+        data: [],
+        config: {
+          primary_group: 'Black',
+          reference_group: 'White',
+          group_var: undefined as any,
+          metric: 'conviction_rate',
+        },
+      };
+
+      const spec = viz.autoSelectViz([], config);
+      expect(spec).toBeDefined();
+    });
+
+    it('should handle missing metric with default', () => {
+      const config: VizConfig = {
+        type: 'bar',
+        title: 'Test',
         data: [],
         config: {
           primary_group: 'Black',
           reference_group: 'White',
           group_var: 'race_ethnicity',
-          metric: 'conviction_rate',
-          time_var: undefined,
-          min_cases: 30,
+          metric: undefined as any,
         },
       };
 
-      if (type === 'bar') {
-        const spec = viz.barChartConvictionRates(config);
-        expect(spec.chart_type).toBe('bar');
-      } else if (type === 'trend') {
-        const spec = viz.trendLineDisparity(config);
-        expect(spec.chart_type).toBe('line');
-      } else if (type === 'heatmap') {
-        const spec = viz.heatmapDisparity(config);
-        expect(spec.chart_type).toBe('heatmap');
-      } else if (type === 'judge') {
-        const spec = viz.judgeComparison(config);
-        expect(spec.chart_type).toBe('bar');
-      } else if (type === 'sentence') {
-        const spec = viz.sentenceDistribution(config);
-        expect(spec.chart_type).toBe('histogram');
-      } else if (type === 'disposition') {
-        const spec = viz.dispositionFlow(config);
-        expect(spec.chart_type).toBe('stacked');
-      }
-    }
+      const spec = viz.autoSelectViz([], config);
+      expect(spec).toBeDefined();
+    });
+  });
+});
+
+describe('generateEmbedCode', () => {
+  it('should generate HTML embed code with default dimensions', () => {
+    const spec: VizSpec = {
+      chart_type: 'bar',
+      chart_title: 'Test Chart',
+      x_axis: { label: 'Group', field: 'race_ethnicity' },
+      y_axis: { label: 'Rate (%)', field: 'conviction_rate' },
+      color_variable: 'race_ethnicity',
+      description: 'Test description',
+      limitations: [
+        'Small sample sizes may make rates unreliable',
+        'Bars may not show statistical significance',
+      ],
+      audience_notes: [
+        'Large gaps between bars indicate potential disparate treatment',
+        'Check if your group has the lowest rate',
+      ],
+    };
+
+    const html = generateEmbedCode(spec);
+
+    expect(html).toBeDefined();
+    expect(html).toContain('<div class="akashic-viz"');
+    expect(html).toContain('width: 100%');
+    expect(html).toContain('height: 500px');
+    expect(html).toContain('<h3>Test Chart</h3>');
+    expect(html).toContain('Test description');
+    expect(html).toContain('Limitations:');
+    expect(html).toContain('Key Insights:');
+  });
+
+  it('should generate HTML embed code with custom dimensions', () => {
+    const spec: VizSpec = {
+      chart_type: 'line',
+      chart_title: 'Trend Chart',
+      x_axis: { label: 'Year', field: 'year' },
+      y_axis: { label: 'Gap', field: 'gap' },
+      color_variable: 'group',
+      description: 'Trend description',
+      limitations: ['Test limitation'],
+      audience_notes: ['Test note'],
+    };
+
+    const html = generateEmbedCode(spec, '800px', '600px');
+
+    expect(html).toContain('width: 800px');
+    expect(html).toContain('height: 600px');
+  });
+
+  it('should include all limitations in embed code', () => {
+    const spec: VizSpec = {
+      chart_type: 'heatmap',
+      chart_title: 'Heatmap',
+      x_axis: { label: 'Offense', field: 'charge_type' },
+      y_axis: { label: 'Group', field: 'race' },
+      color_variable: 'disparity_rate',
+      description: 'Heatmap description',
+      limitations: ['Limitation 1', 'Limitation 2', 'Limitation 3'],
+      audience_notes: ['Note'],
+    };
+
+    const html = generateEmbedCode(spec);
+
+    expect(html).toContain('<li>Limitation 1</li>');
+    expect(html).toContain('<li>Limitation 2</li>');
+    expect(html).toContain('<li>Limitation 3</li>');
+  });
+
+  it('should include all audience notes in embed code', () => {
+    const spec: VizSpec = {
+      chart_type: 'bar',
+      chart_title: 'Bar Chart',
+      x_axis: { label: 'Group', field: 'race' },
+      y_axis: { label: 'Rate', field: 'rate' },
+      color_variable: 'race',
+      description: 'Description',
+      limitations: ['Limitation'],
+      audience_notes: ['Note 1', 'Note 2'],
+    };
+
+    const html = generateEmbedCode(spec);
+
+    expect(html).toContain('<li>Note 1</li>');
+    expect(html).toContain('<li>Note 2</li>');
+  });
+
+  it('should return a trimmed string without leading/trailing whitespace', () => {
+    const spec: VizSpec = {
+      chart_type: 'bar',
+      chart_title: 'Test',
+      x_axis: { label: 'X', field: 'x' },
+      y_axis: { label: 'Y', field: 'y' },
+      color_variable: 'group',
+      description: 'Description',
+      limitations: [],
+      audience_notes: [],
+    };
+
+    const html = generateEmbedCode(spec);
+    expect(html.startsWith('\n')).toBe(false);
+    expect(html.endsWith('\n')).toBe(false);
+  });
+
+  it('should include chart type in placeholder', () => {
+    const spec: VizSpec = {
+      chart_type: 'scatter',
+      chart_title: 'Test',
+      x_axis: { label: 'X', field: 'x' },
+      y_axis: { label: 'Y', field: 'y' },
+      color_variable: 'group',
+      description: 'Desc',
+      limitations: [],
+      audience_notes: [],
+    };
+
+    const html = generateEmbedCode(spec);
+    expect(html).toContain('Chart: scatter');
   });
 });

@@ -6,7 +6,7 @@ describe('RInterface', () => {
     expect(rInterface).toBeDefined();
     // Check that the private fields exist via bracket notation
     const dir = (rInterface as any).analysisTemplatesDir;
-    expect(dir).toBe('/home/elw/Akashic-Civics/docs/analysis-templates');
+    expect(dir).toContain('docs/analysis-templates');
   });
 
   it('should initialize with custom R path', () => {
@@ -177,5 +177,144 @@ describe('RInterface', () => {
     const rInterface = new RInterface();
     (rInterface as any).cleanupTempFiles('/nonexistent/path1', '/nonexistent/path2');
     // Should not throw even if files don't exist
+  });
+  
+  it('should handle cleanup of empty paths', () => {
+    const rInterface = new RInterface();
+    (rInterface as any).cleanupTempFiles();
+    // Should not throw with no arguments
+  });
+  
+  it('should validate input cases successfully', () => {
+    const rInterface = new RInterface();
+    const cases = [
+      { id: 'case-1', jurisdiction_id: 'TX-001' },
+      { id: 'case-2', jurisdiction_id: 'TX-002' }
+    ];
+    const result = rInterface.validateInputCases(cases);
+    
+    expect(result.valid).toBe(true);
+    expect(result.issues).toHaveLength(0);
+  });
+  
+  it('should reject non-array input', () => {
+    const rInterface = new RInterface();
+    const result = rInterface.validateInputCases('not an array' as any);
+    
+    expect(result.valid).toBe(false);
+    expect(result.issues).toContain('Input must be an array');
+  });
+  
+  it('should reject empty array input', () => {
+    const rInterface = new RInterface();
+    const result = rInterface.validateInputCases([]);
+    
+    expect(result.valid).toBe(false);
+    expect(result.issues).toContain('No cases provided for analysis');
+  });
+  
+  it('should detect cases missing IDs', () => {
+    const rInterface = new RInterface();
+    const cases = [
+      { jurisdiction_id: 'TX-001' },
+      { id: 'case-2', jurisdiction_id: 'TX-002' }
+    ];
+    const result = rInterface.validateInputCases(cases);
+    
+    expect(result.valid).toBe(false);
+    expect(result.issues).toContain('Case 0 missing valid ID');
+  });
+  
+  it('should detect non-object case entries', () => {
+    const rInterface = new RInterface();
+    const cases = [null, { id: 'case-2', jurisdiction_id: 'TX-002' }];
+    const result = rInterface.validateInputCases(cases as any);
+    
+    expect(result.valid).toBe(false);
+    expect(result.issues).toContain('Case 0 is not a valid object');
+  });
+  
+  it('should validate result with missing analysis_type', () => {
+    const rInterface = new RInterface();
+    
+    expect(() => {
+      (rInterface as any).validateResult({ effect_size: 0.5 });
+    }).toThrow('missing analysis_type');
+  });
+  
+  it('should validate result with null data', () => {
+    const rInterface = new RInterface();
+    
+    expect(() => {
+      (rInterface as any).validateResult(null);
+    }).toThrow('Invalid R result: not an object');
+  });
+  
+  it('should handle validateResult with non-numeric fields', () => {
+    const rInterface = new RInterface();
+    
+    const result = (rInterface as any).validateResult({
+      analysis_type: 'test',
+      effect_size: 'not a number',
+      p_value: 'also not a number',
+      confidence_interval: 'invalid',
+      odds_ratio: 'invalid',
+    });
+    
+    expect(result.effect_size).toBe(0);
+    expect(result.p_value).toBe(1);
+    expect(result.confidence_interval).toEqual([0, 0]);
+    expect(result.odds_ratio).toBeUndefined();
+  });
+  
+  it('should handle validateResult with numeric confidence interval', () => {
+    const rInterface = new RInterface();
+    
+    const result = (rInterface as any).validateResult({
+      analysis_type: 'test',
+      confidence_interval: [0.01, 0.49],
+    });
+    
+    expect(result.confidence_interval).toEqual([0.01, 0.49]);
+  });
+  
+  it('should handle validateResult with invalid confidence interval', () => {
+    const rInterface = new RInterface();
+    
+    const result = (rInterface as any).validateResult({
+      analysis_type: 'test',
+      confidence_interval: [0.01]  // Only 1 element
+    });
+    
+    expect(result.confidence_interval).toEqual([0, 0]);
+  });
+  
+  it('should preserve numeric odds_ratio in validateResult', () => {
+    const rInterface = new RInterface();
+    
+    const result = (rInterface as any).validateResult({
+      analysis_type: 'test',
+      odds_ratio: 2.5
+    });
+    
+    expect(result.odds_ratio).toBe(2.5);
+  });
+  
+  it('should handle generateRScript with no pre-registration path', () => {
+    const rInterface = new RInterface();
+    const options: RAnalysisOptions = {
+      analysisFunction: 'sentencing_disparity',
+      groupVariable: 'race_ethnicity',
+      outcomeVariable: 'sentence_months',
+      controlVariables: [],
+      alpha: 0.05,
+      imputeMissing: false,
+      includeDisconfirmation: false,
+      outputFormat: 'csv'
+    };
+    
+    const script = rInterface.generateRScript('/tmp/in.json', '/tmp/out.json', options);
+    expect(script).toContain('sentencing_disparity');
+    expect(script).toContain('output_dir');
   });
 });

@@ -1,4 +1,15 @@
 export * from './historical_baseline';
 export { HistoricalBaseline } from './historical_baseline';
+export { EnhancedHistoricalBaseline } from './enhanced_historical_baseline';
+export type { SnapshotStats } from './enhanced_historical_baseline';
+export type { AnomalyDetection, CUSUMChart, BayesianChangePoint, PolicyImpactMarker, TrendDecomposition } from './enhanced_historical_baseline';
 export * from './statistical_analysis';
 export * from './alternative_explanations';
+export * from './logistic_regression';
+export * from './survival_analysis';
+export * from './causal_inference';
+export * from './bayesian_analysis';
+export * from './disconfirmation_philosophy';
+export * from './adaptive_disconfirmation';
+export * from './scoring_framework';
+export * from './documentation_generator';

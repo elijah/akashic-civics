@@ -1,0 +1,67 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'typedoc.json'
+      - 'playground/**'
+      - 'docs/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build-docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - run: npm ci
+      
+      - name: Generate API docs
+        run: npx typedoc --options typedoc.json
+      
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/api/
+
+  build-playground:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - name: Navigate to playground
+        working-directory: ./playground
+        run: npm install
+      
+      - name: Build playground
+        working-directory: ./playground
+        run: npm run build
+      
+      - name: Upload playground artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: playground out
+
+  deploy:
+    needs: [build-docs, build-playground]
+    runs-on: ubuntu-latest
+    environment: github-pages
+    steps:
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

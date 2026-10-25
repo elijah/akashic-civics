@@ -52,20 +52,21 @@ export class HistoricalBaseline {
     this.loadExisting();
   }
   
-  // Create a new snapshot from current data
-  createSnapshot(
-    jurisdictionId: string,
-    cases: Array<{
-      conviction?: number;
-      sentence_months?: number;
-      days_to_disposition?: number;
-      race_ethnicity?: string;
-      offense_severity?: string;
-      missing_fields?: string[];
-    }>
-  ): DataSnapshot {
-    const timestamp = new Date().toISOString();
-    const snapshotId = `${jurisdictionId}_${Date.now()}_${this.snapshotIndex++}`;
+    // Create a new snapshot from current data
+    createSnapshot(
+      jurisdictionId: string,
+      cases: Array<{
+        conviction?: number;
+        sentence_months?: number;
+        days_to_disposition?: number;
+        race_ethnicity?: string;
+        offense_severity?: string;
+        missing_fields?: string[];
+      }>
+    ): DataSnapshot {
+      const timestamp = new Date().toISOString();
+      const snapshotId = `${jurisdictionId}_${this.snapshotIndex}_${Date.now()}`;
+      this.snapshotIndex++;
     
     // Calculate statistics
     const stats = this.computeStats(cases);

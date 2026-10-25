@@ -1,0 +1,17 @@
+Package: akashic.civics
+Title: Akashic Civics R Package
+Version: 0.1.0
+Description: R wrapper for Akashic Civics criminal justice disparity analysis
+License: MIT
+Encoding: UTF-8
+LazyLoad: yes
+Roxygen: list(markdown = TRUE)
+
+Depends:
+    R (>= 3.5.0)
+
+Imports:
+    fastcheck
+
+Suggests:
+    testthat

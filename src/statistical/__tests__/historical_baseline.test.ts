@@ -188,4 +188,43 @@ describe('HistoricalBaseline', () => {
     expect(parsed).toHaveLength(1);
     expect(parsed[0].jurisdiction_id).toBe('TX-001');
   });
+
+  it('should handle empty cases array', () => {
+    const baseline = new HistoricalBaseline(snapshotDir);
+    const snapshot = baseline.createSnapshot('TX-001', []);
+    
+    expect(snapshot).toBeDefined();
+    expect(snapshot.case_count).toBe(0);
+    expect(snapshot.key_statistics.conviction_rate).toBe(0);
+    expect(snapshot.key_statistics.avg_sentence_months).toBe(0);
+    expect(snapshot.key_statistics.avg_days_to_disposition).toBe(0);
+    expect(snapshot.key_statistics.demographic_distribution).toEqual({});
+    expect(snapshot.key_statistics.offense_mix).toEqual({});
+    expect(snapshot.key_statistics.missing_rate).toBe(1);
+  });
+
+  it('should handle missing fields in cases', () => {
+    const baseline = new HistoricalBaseline(snapshotDir);
+    const cases = [
+      { conviction: 1, sentence_months: 12, days_to_disposition: 60, race_ethnicity: 'Black', offense_severity: 'high', missing_fields: [] },
+      { conviction: 0, sentence_months: null, days_to_disposition: null, race_ethnicity: 'White', offense_severity: 'low', missing_fields: ['field1'] },
+    ];
+    
+    const snapshot = baseline.createSnapshot('TX-001', cases as any);
+    expect(snapshot).toBeDefined();
+    expect(snapshot.derived_variables.total_cases).toBe(2);
+    expect(snapshot.derived_variables.total_convictions).toBe(1);
+    expect(snapshot.key_statistics.missing_rate).toBe(0.5);
+  });
+
+  it('should handle cases with all conviction values null', () => {
+    const baseline = new HistoricalBaseline(snapshotDir);
+    const cases = [
+      { sentence_months: 12, days_to_disposition: 60, race_ethnicity: 'Black', offense_severity: 'high', missing_fields: [] },
+      { sentence_months: 10, days_to_disposition: 50, race_ethnicity: 'White', offense_severity: 'low', missing_fields: [] },
+    ];
+    
+    const snapshot = baseline.createSnapshot('TX-001', cases as any);
+    expect(snapshot.key_statistics.conviction_rate).toBe(0);
+  });
 });

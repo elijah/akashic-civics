@@ -32,30 +32,34 @@ export interface VizSpec {
  * Generate chart specifications for different visualization types
  */
 export class DisparityVisualizer {
-  
-  /**
-   * Bar Chart: Conviction rates by demographic group
-   */
-  barChartConvictionRates(config: VizConfig): VizSpec {
-    return {
-      chart_type: 'bar',
-      chart_title: config.title || 'Conviction Rates by Demographic Group',
-      x_axis: { label: config.config.group_var.replace(/_/g, ' '), field: config.config.group_var },
-      y_axis: { label: `${config.config.metric.replace(/_/g, ' ')} (%)`, field: config.config.metric },
-      color_variable: config.config.group_var,
-      description: `Compare ${config.config.metric.replace(/_/g, ' ')} across different ${config.config.group_var.replace(/_/g, ' ')} groups. Each bar represents the rate for that group, making disparities immediately visible.`,
-      limitations: [
-        'Bars may not show statistical significance - check confidence intervals',
-        'Small sample sizes may make rates unreliable',
-        'Rates may be affected by case mix differences (controls needed for proper analysis)'
-      ],
-      audience_notes: [
-        'Large gaps between bars indicate potential disparate treatment',
-        'Check if your group has the lowest rate',
-        'Compare to state or national benchmarks shown as reference line'
-      ]
-    };
-  }
+   
+   /**
+    * Bar Chart: Conviction rates by demographic group
+    */
+   barChartConvictionRates(config: VizConfig): VizSpec {
+     // Use safe defaults for undefined values
+     const groupVar = config.config.group_var || 'race_ethnicity';
+     const metric = config.config.metric || 'conviction_rate';
+     
+     return {
+       chart_type: 'bar',
+       chart_title: config.title || 'Conviction Rates by Demographic Group',
+       x_axis: { label: groupVar.replace(/_/g, ' '), field: groupVar },
+       y_axis: { label: `${metric.replace(/_/g, ' ')} (%)`, field: metric },
+       color_variable: groupVar,
+       description: `Compare ${metric.replace(/_/g, ' ')} across different ${groupVar.replace(/_/g, ' ')} groups. Each bar represents the rate for that group, making disparities immediately visible.`,
+       limitations: [
+         'Bars may not show statistical significance - check confidence intervals',
+         'Small sample sizes may make rates unreliable',
+         'Rates may be affected by case mix differences (controls needed for proper analysis)'
+       ],
+       audience_notes: [
+         'Large gaps between bars indicate potential disparate treatment',
+         'Check if your group has the lowest rate',
+         'Compare to state or national benchmarks shown as reference line'
+       ]
+     };
+   }
 
   /**
    * Trend Line: Disparity over time

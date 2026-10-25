@@ -1,0 +1,23 @@
+{
+  "entryPoints": ["src/index.ts"],
+  "out": "docs/api",
+  "theme": "default",
+  "plugin": ["typedoc-plugin-markdown"],
+  "excludeExternals": true,
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "categorizeByGroup": true,
+  "defaultCategory": "Core Modules",
+  "categoryOrder": [
+    "Core",
+    "Statistical",
+    "Accountability",
+    "Visualization",
+    "CLI",
+    "Testing",
+    "Documentation"
+  ],
+  "readme": "README.md",
+  "githubPages": true,
+  "cleanOutputDir": true
+}

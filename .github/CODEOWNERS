@@ -1,0 +1,27 @@
+# Core maintainers
+* @akashic-civics/maintainers
+
+# Statistical modules
+/src/statistical/ @akashic-civics/statisticians
+
+# Accountability tools
+/src/accountability/ @akashic-civics/accountability-team
+
+# Visualization
+/src/visualization/ @akashic-civics/visualization-team
+
+# CLI tools
+/src/cli/ @akashic-civics/cli-team
+
+# Documentation
+/src/documentation/ @akashic-civics/documentation-team
+/docs/ @akashic-civics/documentation-team
+
+# Testing infrastructure
+/src/testing/ @akashic-civics/testing-team
+
+# CI/CD
+/.github/workflows/ @akashic-civics/infrastructure-team
+
+# Security
+SECURITY.md @akashic-civics/security-team

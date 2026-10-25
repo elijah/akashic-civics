@@ -1,0 +1,7 @@
+export(compute_descriptive_stats)
+export(run_disconfirmation_tests)
+export(run_z_test)
+export(export_results)
+importFrom(utils, read.csv, write.csv)
+importFrom(jsonlite, toJSON)
+importFrom(stats, pnorm, qnorm, asin, sqrt, mean, sum)
