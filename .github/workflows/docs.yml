@@ -31,7 +31,10 @@ jobs:
       - name: Generate API docs
         run: npx typedoc --options typedoc.json
       
-      - name: Upload artifact
+      - name: Ensure .nojekyll exists
+        run: touch docs/api/.nojekyll
+      
+      - name: Upload API docs artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: docs/api/
@@ -45,13 +48,16 @@ jobs:
         with:
           node-version: '20'
       
-      - name: Navigate to playground
+      - name: Install playground dependencies
         working-directory: ./playground
-        run: npm install
+        run: npm ci
       
       - name: Build playground
         working-directory: ./playground
         run: npm run build
+      
+      - name: Ensure .nojekyll exists in playground
+        run: touch docs/playground/.nojekyll
       
       - name: Upload playground artifact
         uses: actions/upload-pages-artifact@v3
