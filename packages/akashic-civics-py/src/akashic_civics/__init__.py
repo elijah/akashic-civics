@@ -32,6 +32,12 @@ class DisparityAnalyzer:
         Returns:
             Dictionary with conviction_rate, avg_sentence_months, demographic_distribution
         """
+        # Try in-process analysis first
+        try:
+            from akashic_civics.stats import compute_descriptive_stats
+            return compute_descriptive_stats(cases)
+        except ImportError:
+            pass
         return self._run_analysis('describe', cases)
     
     def run_z_test(
@@ -48,6 +54,11 @@ class DisparityAnalyzer:
         Returns:
             Dictionary with p_value, effect_size
         """
+        try:
+            from akashic_civics.stats import run_z_test
+            return run_z_test(p1, n1, p2, n2)
+        except ImportError:
+            pass
         return self._run_analysis('ztest', {
             'p1': p1, 'n1': n1, 'p2': p2, 'n2': n2
         })
@@ -61,6 +72,11 @@ class DisparityAnalyzer:
         Returns:
             Disconfirmation score and test results
         """
+        try:
+            from akashic_civics.stats import run_disconfirmation_battery
+            return run_disconfirmation_battery(cases)
+        except ImportError:
+            pass
         return self._run_analysis('disconfirm', cases)
     
     def run_ols_regression(
@@ -77,9 +93,101 @@ class DisparityAnalyzer:
         Returns:
             Dictionary with coefficients, r_squared, etc.
         """
+        try:
+            from akashic_civics.stats import run_ols_regression as _run_ols
+            return _run_ols(cases, "sentence_months", predictors)
+        except ImportError:
+            pass
         return self._run_analysis('ols', {
             'cases': cases,
             'predictors': predictors
+        })
+
+    def run_logistic_regression(
+        self,
+        cases: List[Dict[str, Any]],
+        outcome_col: str,
+        predictors: List[str]
+    ) -> Dict[str, Any]:
+        """Run logistic regression for binary outcomes.
+        
+        Args:
+            cases: List of case dictionaries
+            outcome_col: Binary outcome column name
+            predictors: List of predictor variable names
+            
+        Returns:
+            Dictionary with coefficients, odds_ratios, p_values
+        """
+        try:
+            from akashic_civics.stats import run_logistic_regression
+            return run_logistic_regression(cases, outcome_col, predictors)
+        except ImportError:
+            pass
+        return self._run_analysis('logistic', {
+            'cases': cases,
+            'outcome_col': outcome_col,
+            'predictors': predictors
+        })
+
+    def run_doubly_robust(
+        self,
+        cases: List[Dict[str, Any]],
+        treatment_col: str,
+        outcome_col: str,
+        covariates: List[str]
+    ) -> Dict[str, Any]:
+        """Run doubly-robust causal estimation.
+        
+        Args:
+            cases: List of case dictionaries
+            treatment_col: Binary treatment indicator column
+            outcome_col: Outcome variable column
+            covariates: List of covariate column names
+            
+        Returns:
+            Dictionary with treatment_effect, confidence_interval, etc.
+        """
+        try:
+            from akashic_civics.stats import run_doubly_robust
+            return run_doubly_robust(cases, treatment_col, outcome_col, covariates)
+        except ImportError:
+            pass
+        return self._run_analysis('doubly_robust', {
+            'cases': cases,
+            'treatment_col': treatment_col,
+            'outcome_col': outcome_col,
+            'covariates': covariates
+        })
+
+    def compare_jurisdictions(
+        self,
+        cases: List[Dict[str, Any]],
+        outcome_col: str,
+        group_col: str = "race_ethnicity",
+        jurisdiction_col: str = "jurisdiction_id"
+    ) -> Dict[str, Any]:
+        """Compare disparities across jurisdictions.
+        
+        Args:
+            cases: List of case dictionaries
+            outcome_col: Outcome column name
+            group_col: Grouping column name
+            jurisdiction_col: Jurisdiction column name
+            
+        Returns:
+            Dictionary with per-jurisdiction disparities and ranking
+        """
+        try:
+            from akashic_civics.stats import compare_jurisdictions
+            return compare_jurisdictions(cases, outcome_col, group_col, jurisdiction_col)
+        except ImportError:
+            pass
+        return self._run_analysis('compare', {
+            'cases': cases,
+            'outcome_col': outcome_col,
+            'group_col': group_col,
+            'jurisdiction_col': jurisdiction_col
         })
     
     def export_results(
@@ -193,6 +301,28 @@ class DisparityAnalyzer:
 __version__ = '1.0.0'
 __all__ = ['DisparityAnalyzer']
 
+try:
+    from .stats import (
+        compute_descriptive_stats,
+        run_z_test,
+        run_ols_regression,
+        run_logistic_regression,
+        run_doubly_robust,
+        run_disconfirmation_battery,
+        compare_jurisdictions,
+    )
+    __all__.extend([
+        'compute_descriptive_stats',
+        'run_z_test',
+        'run_ols_regression',
+        'run_logistic_regression',
+        'run_doubly_robust',
+        'run_disconfirmation_battery',
+        'compare_jurisdictions',
+    ])
+except ImportError:
+    pass
+
 from .jupyter import (
     AkashicMagics,
     NotebookGenerator,
@@ -202,4 +332,17 @@ from .jupyter import (
     load_ipython_extension,
 )
 
-__all__ = ['DisparityAnalyzer', 'AkashicMagics', 'NotebookGenerator', 'create_comparison_notebook', 'load_ipython_extension']
+__all__ = [
+    'DisparityAnalyzer',
+    'compute_descriptive_stats',
+    'run_z_test',
+    'run_ols_regression',
+    'run_logistic_regression',
+    'run_doubly_robust',
+    'run_disconfirmation_battery',
+    'compare_jurisdictions',
+    'AkashicMagics',
+    'NotebookGenerator',
+    'create_comparison_notebook',
+    'load_ipython_extension',
+]

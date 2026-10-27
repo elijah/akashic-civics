@@ -1,0 +1,195 @@
+/* Dashboard CSS */
+:root {
+  --primary: #1f2937;
+  --secondary: #6b7280;
+  --accent: #dc2626;
+  --accent-light: #f87171;
+  --background: #f9fafb;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --text: #111827;
+  --muted: #6b7280;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background: var(--background);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Header */
+.header {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  border: 1px solid var(--border);
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.header p {
+  margin: 0.5rem 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+/* Controls */
+.controls {
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+}
+
+.controls h2 {
+  margin: 0 0 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.control-group {
+  margin-bottom: 1rem;
+}
+
+.control-group label {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.control-group select,
+.control-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+}
+
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.kpi-card {
+  background: var(--card);
+  border-radius: 8px;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+.kpi-card .value {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.kpi-card .label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+
+/* Visualizations grid */
+.visualizations {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.viz-card {
+  background: var(--card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  border: 1px solid var(--border);
+  height: 100%;
+}
+
+.viz-header {
+  background: var(--primary);
+  color: var(--card);
+  padding: 1rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.viz-header h3 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.viz-header .description {
+  font-size: 0.75rem;
+  opacity: 0.9;
+  margin-top: 0.25rem;
+}
+
+.viz-body {
+  padding: 1rem 1.25rem;
+  height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.viz-placeholder {
+  text-align: center;
+  width: 100%;
+}
+
+.viz-placeholder div {
+  opacity: 0.5;
+}
+
+/* Loading state */
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: var(--muted);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .app-container {
+    padding: 1rem;
+  }
+  
+  .controls {
+    padding: 1rem;
+  }
+  
+  .viz-body {
+    height: 200px;
+    font-size: 0.75rem;
+  }
+}

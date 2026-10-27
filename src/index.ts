@@ -14,5 +14,7 @@ export type { FBICaseData, BJSDataPoint, DataFetchOptions, DataSourceConfig } fr
 export { ExtensionRegistry, ExtensionError } from './extensions';
 export { StreamProcessor, createStreamProcessor } from './performance';
 export type { StreamConfig, StreamBatchResult, StreamManifest, StreamProcessorOptions } from './performance';
+export { DashboardServer, createDashboardServer } from './dashboard';
+export type { DashboardConfig } from './dashboard';
 
 export { AnalysisPipeline as default } from './analysis';
