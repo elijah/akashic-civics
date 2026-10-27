@@ -18,6 +18,7 @@ describe('StreamProcessor', () => {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   });
 
+  // Helper: create processor with config + rootDir
   function makeProcessor(config?: StreamConfig): StreamProcessor {
     return createStreamProcessor({ rootDir: tmpDir, config });
   }
@@ -46,9 +47,9 @@ describe('StreamProcessor', () => {
     it('should process records in a single chunk', async () => {
       const proc = makeProcessor({ batchSize: 100, chunkSize: 50 });
       const records = [
-        { conviction: true, race: 'A' },
-        { conviction: false, race: 'B' },
-        { conviction: true, race: 'A' },
+        { conviction: true, race_ethnicity: 'A' },
+        { conviction: false, race_ethnicity: 'B' },
+        { conviction: true, race_ethnicity: 'A' },
       ];
       const results = await proc.processRecords(records, 'TX-001', 'Test County');
 
@@ -109,9 +110,9 @@ describe('StreamProcessor', () => {
       const proc = makeProcessor({ batchSize: 10, chunkSize: 5 });
       const filePath = path.join(tmpDir, 'input.jsonl');
       const lines = [
-        { conviction: true, race: 'White' },
-        { conviction: false, race: 'Black' },
-        { conviction: true, race: 'Hispanic' },
+        { conviction: true, race_ethnicity: 'White' },
+        { conviction: false, race_ethnicity: 'Black' },
+        { conviction: true, race_ethnicity: 'Hispanic' },
       ];
       fs.writeFileSync(filePath, lines.map(l => JSON.stringify(l)).join('\n'), 'utf8');
 
@@ -176,6 +177,75 @@ describe('StreamProcessor', () => {
       // Create new processor with same root dir
       const proc2 = makeProcessor({ batchSize: 10, chunkSize: 5 });
       expect(proc2.totalCases()).toBe(2);
+    });
+  });
+
+  describe('disparity tracking and alerts', () => {
+    it('should track group-level stats', async () => {
+      const proc = makeProcessor({
+        batchSize: 100,
+        chunkSize: 10,
+        enableDisparityTracking: true,
+      });
+      const records = [
+        { conviction: true, race_ethnicity: 'White' },
+        { conviction: false, race_ethnicity: 'White' },
+        { conviction: true, race_ethnicity: 'Black' },
+        { conviction: true, race_ethnicity: 'Black' },
+        { conviction: true, race_ethnicity: 'Black' },
+      ];
+      await proc.processRecords(records, 'TX-001', 'Test County');
+
+      // After createBatchRecord clears batchGroupStats, cumulative stats are in manifest
+      const cumulativeStats = proc.getCumulativeGroupStats();
+      expect(cumulativeStats.length).toBeGreaterThan(0);
+
+      const whiteStats = cumulativeStats.find(s => s.group === 'White');
+      const blackStats = cumulativeStats.find(s => s.group === 'Black');
+      expect(whiteStats?.cases).toBe(2);
+      expect(blackStats?.cases).toBe(3);
+      expect(blackStats?.convictionRate).toBe(1.0);
+    });
+
+    it('should include alerts in batch results', async () => {
+      const proc = makeProcessor({
+        batchSize: 100,
+        chunkSize: 10,
+        enableDisparityTracking: true,
+        alertThresholds: { convictionRateDisparity: 1.5, minimumCasesPerGroup: 2 },
+      });
+      const records = [
+        { conviction: true, race_ethnicity: 'A' },
+        { conviction: true, race_ethnicity: 'A' },
+        { conviction: false, race_ethnicity: 'B' },
+        { conviction: false, race_ethnicity: 'B' },
+      ];
+      const results = await proc.processRecords(records, 'TX-001', 'Test County');
+
+      // results should have alerts field
+      expect(results[0]).toHaveProperty('alerts');
+      expect(Array.isArray(results[0].alerts)).toBe(true);
+    });
+
+    it('should include alert info with disparity threshold', async () => {
+      const proc = makeProcessor({
+        batchSize: 50,
+        chunkSize: 10,
+        enableDisparityTracking: true,
+        alertThresholds: { convictionRateDisparity: 3.0 },
+      });
+      // Group A: all convicted, Group B: none convicted
+      const records = [
+        { conviction: true, race_ethnicity: 'A' },
+        { conviction: true, race_ethnicity: 'A' },
+        { conviction: true, race_ethnicity: 'A' },
+        { conviction: false, race_ethnicity: 'B' },
+        { conviction: false, race_ethnicity: 'B' },
+        { conviction: false, race_ethnicity: 'B' },
+      ];
+      const results = await proc.processRecords(records, 'TX-001', 'Test County');
+
+      expect(results[0]).toHaveProperty('alerts');
     });
   });
 });

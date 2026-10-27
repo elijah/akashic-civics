@@ -12,5 +12,7 @@ export { AnalysisPipeline, AnalysisPipelineConfig, AnalysisPipelineResult } from
 export { DataPipeline, dataPipeline, FBIUCRSource, BJSSource } from './data-sources';
 export type { FBICaseData, BJSDataPoint, DataFetchOptions, DataSourceConfig } from './data-sources';
 export { ExtensionRegistry, ExtensionError } from './extensions';
+export { StreamProcessor, createStreamProcessor } from './performance';
+export type { StreamConfig, StreamBatchResult, StreamManifest, StreamProcessorOptions } from './performance';
 
 export { AnalysisPipeline as default } from './analysis';
