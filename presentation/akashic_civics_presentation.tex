@@ -1,196 +1,118 @@
 \documentclass[11pt]{article}
-\usepackage[margin=1in]{geometry}
-\usepackage{amssymb}
+\usepackage[margin=1in, top=0.75in, bottom=0.75in]{geometry}
+\usepackage{amsmath,amssymb}
 \usepackage{hyperref}
+\usepackage{tabularx}
 
-\title{\Huge\textbf{Akashic Civics: Open-Source Tools for Criminal Justice Disparity Analysis \& Civic Democracy}}
+\title{\Huge\textbf{Akashic Civics: From Invisible Injustice to Measurable Democracy}}
 \date{}
 
-\setlength{\parskip}{0.5em}
+\newcommand{\slide}[1]{\vspace{0.4em}\noindent\textbf{#1}\vspace{0.2em}}
+
+\setlength{\parskip}{0.4em}
 
 \begin{document}
 
-\begin{center}
-\Huge\textbf{Akashic Civics: Open-Source Tools for Criminal Justice Disparity Analysis \& Civic Democracy}\\[1em]
-\large{Akashic Civics Project Team}\\[2em]
+\begin{center} \Huge\textbf{Akashic Civics}\\[0.2em]
+\LARGE{From Invisible Injustice to Measurable Democracy}\\[0.8em]
+\large{Akashic Civics Project Team}
 \end{center}
 
-\section{The Civic Problem}
+\slide{The Civic Problem: Democracy Without Data}
 
-Local criminal justice decisions shape lives -- but are rarely measured:
+Local criminal justice decisions shape lives -- but they are invisible.  District attorneys, sheriffs, and judges exercise enormous discretion over arrests, charges, bonds, sentences, and parole.  Race, income, and neighborhood predict outcomes more reliably than the law should.  Yet without measurement, communities cannot name it, cannot challenge it, cannot change it.  \\
+\textbf{Why justice requires measurement:} Transparency is the minimum condition for accountability in a democracy.
+
+\slide{What We're Building: Tools for Community Power}
+
+Akashic Civics is open-source infrastructure that helps communities turn fragmented local data into actionable insight.  We combine statistical rigor with civic accessibility: \texttt{TypeScript $\to$ Python $\to$ R}, modular extensions, and dashboards designed for journalists, researchers, and activists.  \\
+\textbf{The vision:} Data belongs to the community, not to the prosecutor.
+
+\slide{Design Principles: Multi-language, Statistical, Composable}
+
+Two principles drive everything we build:\\
+(1) \textbf{Multi-language by design} -- Meet users where they are (policy researchers use R, data scientists use Python, civic tech uses TypeScript).\\
+(2) \textbf{Statistical rigor first} -- No headline numbers without confidence intervals and causal interpretation.\\
+(3) \textbf{Composable, not monolithic} -- Use the dashboard, the CLI, or just the R package.\\
+\textbf{Why this matters:} Tools must fit into existing practices, not reinvent them.
+
+\slide{E16: Data Integration -- The Foundation of Everything}
+
+\textbf{Data hides in silos.}  FBI UCR, BJS, and local court systems store 90\% of what we need -- but in incompatible formats.  Pluggable \texttt{DataSource} interfaces and a \texttt{DataPipeline} that normalizes to a common schema make analysis possible.  \\
+\textbf{For democracy:} If data stays trapped in silos, communities stay powerless.  9 tests ensure reliability across data sources.
+
+\slide{E17: Advanced Analytics -- Causal, Not Just Correlational}
+
+\textbf{Rates lie.}  A 1.4$\times$ conviction rate disparity might mean bias -- or just different crimes.  \texttt{DoublyRobustEstimator} protects against model misspecification; \texttt{BayesianHierarchicalModel} stabilizes estimates in small jurisdictions.  \\
+\textbf{For justice:} Causal methods answer ``Did this policy cause disparity?'' not ``Are they correlated?''  This is how we move from observation to evidence-based reform.
+
+\slide{E18: Interactive CLI Wizard -- Tools for Everyone}
+
+\textbf{No PhD required.}  Non-programmers can load data, choose Jurisdiction, select analysis type, and get results in five steps.  The wizard abstracts technical complexity while preserving methodological choices.  \\
+\textbf{For democracy:} When tools are usable, power diffuses.  A civic organizer, not a statistician, can make the case to their DA.
+
+\slide{E19: Jupyter Notebook Interface -- The Analyst's Playground}
+
+\textbf{Python users want magic,} not CLI flags.  IPython magics (\texttt{\%akashic}), rendered report templates, and direct NumPy/SciPy integration let analysts iterate interactively.  \\
+\textbf{For justice:} Analysts can prototype, explore, and build public-facing narratives.  When research is reproducible in a notebook, findings become shareable across coalitions.
+
+\slide{E20: Publishing Pipeline -- Open Source Cannot Collapse}
+
+Open-source projects die.  An 11-step release pipeline (\texttt{npm publish}, \texttt{pip install}, \texttt{R CMD INSTALL}, \texttt{docker push}, automated testing, changelogs) keeps code current and trustworthy.  \\
+\textbf{For democracy:} Sustainability ensures tools survive grant cycles and volunteer turnover.  Code must be a public good, not a one-person effort.
+
+\slide{E21: Extension System -- Communities Add Their Own Power}
+
+\textbf{Needs differ.}  A Native American tribal court needs different data sources than urban DA's office.  \texttt{ExtensionRegistry} lets communities ship custom plugins for DataSources, Analyses, and Exports.  \\
+\textbf{For democracy:} Tools adapt to local contexts instead of requiring local coding skills.  Community ownership starts with modular architecture.
+
+\slide{E22: R Package -- Speaking Policy's Language}
+
+\textbf{Policy researchers think in models, not APIs.}  The \texttt{akashic.civics} R package provides OLS, logistic regression, doubly-robust estimation, and disconfirmation batteries familiar to criminologists and political scientists.  \texttt{R CMD check} compliant, with vignettes.  \\
+\textbf{For justice:} When academic researchers can run the same analysis, findings carry weight in scholarly and policy debates.
+
+\slide{E23: Streaming Analysis -- Justice in (Near) Real Time}
+
+\textbf{Disparity moves fast.}  Policy changes, court closures, or surges in specific crime types can shift ratios dramatically.  \texttt{StreamProcessor} reads JSONL in chunks, tracks group-level statistics, and fires alerts when disparity crosses thresholds.  \\
+\textbf{For democracy:} Real-time monitoring turns reactive analysis into proactive intervention.  When the ratio jumps, advocates know to act.
+
+\slide{E24: Web Dashboard UI -- Storytelling for Citizens}
+
+\textbf{Most users won't run code.}  An Express REST API (\texttt{/api/health}, \texttt{/api/viz-specs}, \texttt{/api/analyze}) powers a static single-page app showing disparity ratios, conviction rates, and sentence lengths.  \\
+\textbf{For justice:} When disparities are visible on a dashboard in a community meeting, officials must confront them.
+
+\slide{E25: Python Statistical Depth -- Scientific Rigor, Not Guesswork}
+
+\textbf{Numbers must be right.}  Real NumPy/SciPy implementations of descriptive statistics, Z-tests, OLS, logistic regression, doubly-robust estimation, and disconfirmation batteries replace placeholder functions.  Error handling with informative messages.  \\
+\textbf{For democracy:} Communities can trust that their analysis withstands peer review, Freedom of Information Act challenges, and expert scrutiny.
+
+\slide{A Concrete Democracy in Action}
+
+\textbf{Scenario.}  Mid-sized county, 12,000 cases/year.  A community group loads 3 years of data into Akashic Civics.  Doubly-robust analysis: Black defendants convicted at 1.4$\times$ rate of White defendants ($p<0.01$).  Streaming alert: ratio jumped from 1.2$\times$ to 1.6$\times$ after new DA took office.  Group presents findings at public safety committee hearing.  DA adopts new charging guidelines.  Next quarter: disparity drops to 1.1$\times$.\\[0.5em]
+\textbf{Key:} Measurement enabled accountability; accountability drove policy change; policy change reduced disparity.
+
+\slide{Toward a More Just Democracy}
+
 \begin{itemize}
-    \item Arrests, charges, convictions, and sentences happen at the local level
-    \item District attorneys, sheriffs, and judges wield enormous discretion
-    \item Disparity by race, income, and neighborhood is well-documented nationally -- but local data is fragmented
-    \item Without measurable baselines, communities cannot advocate for change or evaluate reform
+    \item \textbf{Transparency:} Disparity metrics no longer locked in prosecutors' spreadsheets
+    \item \textbf{Participation:} Community groups analyze the same data as officials
+    \item \textbf{Accountability:} Elected leaders evaluated on measurable outcomes
+    \item \textbf{Reform Evaluation:} Did the policy actually reduce disparity?  We can tell.
 \end{itemize}
 
-\section{What Akashic Civics Does}
+\slide{Get Involved}
 
 \begin{itemize}
-    \item Ingest local case data from any jurisdiction
-    \item Run statistical tests (Z-tests, regression, causal inference)
-    \item Track disparities over time with streaming analysis
-    \item Export reports for advocacy, journalism, and policy
-    \item Available in TypeScript, Python, and R
-\end{itemize}
-
-\section{The Enhancement Roadmap (E16--E25)}
-
-\begin{tabular}{lp{5cm}}
-\textbf{E16} & Data integration (FBI UCR, BJS) -- TypeScript \\
-\textbf{E17} & Advanced analytics (doubly-robust, Bayesian) -- TypeScript \\
-\textbf{E18} & Interactive CLI analysis wizard -- TypeScript \\
-\textbf{E19} & Jupyter Notebook interface -- Python \\
-\textbf{E20} & Publishing/release pipeline -- JavaScript \\
-\textbf{E21} & Extension system (plugins) -- TypeScript \\
-\textbf{E22} & R package (regression, causal, comparison) -- R \\
-\textbf{E23} & Streaming analysis with disparity alerts -- TypeScript \\
-\textbf{E24} & Web dashboard UI + Express API -- TypeScript/JS \\
-\textbf{E25} & Python statistical depth (NumPy/SciPy) -- Python \\
-\end{tabular}
-
-\section{Data Integration (E16)}
-
-\begin{itemize}
-    \item Pluggable DataSource interface
-    \item FBIUCRSource and BJSSource implementations
-    \item DataPipeline normalizes heterogeneous inputs into a common schema
-    \item 9 passing tests
-\end{itemize}
-
-\textbf{Implementation choice:} We normalized upstream rather than asking users to clean data.
-
-\section{Advanced Analytics (E17)}
-
-\begin{itemize}
-    \item DoublyRobustEstimator -- combines propensity scores with outcome regression
-    \item BayesianHierarchicalModel -- partial pooling across jurisdictions
-    \item Effect sizes, confidence intervals, uncertainty quantification
-\end{itemize}
-
-\textbf{Implementation choice:} Doubly-robust methods protect against model misspecification.
-
-\section{Interactive CLI Wizard (E18)}
-
-\begin{itemize}
-    \item 5-step guided analysis for non-programmers
-    \item Select data source, choose jurisdiction, select analysis type, configure parameters, execute and export
-\end{itemize}
-
-\textbf{Implementation choice:} A wizard rather than raw commands.
-
-\section{Jupyter + Python (E19 \& E25)}
-
-\begin{itemize}
-    \item IPython magics and NotebookGenerator with comparison templates
-    \item stats.py: descriptive stats, Z-tests, OLS, logistic regression, doubly-robust, disconfirmation, jurisdiction comparison
-\end{itemize}
-
-\textbf{Implementation choice:} Python wrappers try in-process NumPy/SciPy first, then fall back to CLI.
-
-\section{R Package (E22)}
-
-\begin{itemize}
-    \item CRAN-style package with descriptive stats, Z-tests, OLS/logistic regression
-    \item Doubly-robust causal estimation, disconfirmation battery, multi-jurisdiction comparison
-    \item R CMD check compliant, testthat tests, vignette
-\end{itemize}
-
-\textbf{Implementation choice:} R is the lingua franca of public policy and criminology.
-
-\section{Streaming Analysis (E23)}
-
-\begin{itemize}
-    \item StreamProcessor reads JSONL in chunks, never loads full dataset (1M+ cases)
-    \item Incremental group statistics + disparity alerts when ratios cross thresholds
-    \item Alert callback for external dashboards/alerts
-\end{itemize}
-
-\textbf{Implementation choice:} Bounded chunks + persistent manifest for resume and scalability.
-
-\section{Dashboard + API (E24)}
-
-\begin{itemize}
-    \item Express.js server with /api/health, /api/viz-specs, /api/analyze endpoints
-    \item Static SPA serving disparity charts and KPI cards
-    \item Disparity ratio, conviction rates by group, sentence length visualization
-\end{itemize}
-
-\textbf{Implementation choice:} Thin API layer over TypeScript statistical core.
-
-\section{Extension System + Publishing (E21 \& E20)}
-
-\begin{itemize}
-    \item ExtensionRegistry discovers DataSource, Analysis, Export, Transformation plugins
-    \item publish\_pipeline.js: 11-step release cycle from lint to npm/PyPI/R
-    \item 19 extension tests; dry-run mode for safety
-\end{itemize}
-
-\section{Design Principles}
-
-\begin{enumerate}
-    \item Multi-language by design -- Meet users where they are (TS, Python, R)
-    \item Statistical rigor first -- No headline numbers without CI and effect sizes
-    \item Local data, local control -- Data never leaves user's machine unless they choose
-    \item Composable, not monolithic -- Use dashboard, CLI, or just the R package
-\end{enumerate}
-
-\section{Why Doubly-Robust? Why Bayesian?}
-
-\begin{itemize}
-    \item Simple rate comparisons $\rightarrow$ confounded by case mix
-    \item Doubly-robust $\rightarrow$ consistent if either propensity or outcome model is correct
-    \item Bayesian hierarchical $\rightarrow$ small jurisdictions get stable estimates through partial pooling
-\end{itemize}
-
-\section{Why Stream, Why Alert?}
-
-\begin{itemize}
-    \item Batch analysis answers ``what happened?'' -- Streaming answers ``is it happening right now?''
-    \item Alert thresholds create early warning for advocates and oversight bodies
-\end{itemize}
-
-\section{Civic Impact -- Decision Points to Local Leaders}
-
-\begin{tabular}{|l|l|l|}
-\hline
-\textbf{Decision Point} & \textbf{Who Decides} & \textbf{What Akashic Measures} \\
-\hline
-Charging & District Attorney & Conviction rate by demographic, controlling for severity \\
-Bail / Pretrial & Judge & Pretrial detention disparity \\
-Sentencing & Judge & Sentence length disparity, controlling for offense \\
-Diversion & Prosecutor / Court & Disposition flow (convicted vs. dismissed vs. diverted) \\
-\hline
-\end{tabular}
-
-\section{A Concrete Scenario}
-
-Mid-sized county, 12,000 cases/year:
-\begin{itemize}
-    \item Community loads 3 years of case data into Akashic Civics
-    \item Doubly-robust: Black defendants convicted at 1.4$\times$ rate of White defendants ($p < 0.01$)
-    \item Streaming alert: disparity ratio rose from 1.2$\times$ to 1.6$\times$ after new DA
-    \item Community presents at hearing -> DA adopts new charging guidelines
-    \item Next quarter: disparity drops to 1.1$\times$
-\end{itemize}
-
-\section{Promoting Democracy}
-
-\begin{itemize}
-    \item Transparency: Disparity metrics no longer locked in prosecutors' spreadsheets
-    \item Participation: Community groups analyze the same data as officials
-    \item Accountability: Elected leaders evaluated on measurable outcomes
-    \item Reform evaluation: Did the policy actually reduce disparity? We can tell.
-\end{itemize}
-
-\section{Get Involved}
-
-\begin{itemize}
-    \item Install: npm install akashic-civics or pip install akashic-civics-py or R CMD INSTALL
-    \item Run: akashic wizard, akashic dashboard
+    \item Install: \texttt{npm install akashic-civics} $\vert$ \texttt{pip install akashic-civics-py} $\vert$ \texttt{R CMD INSTALL}
+    \item Run: \texttt{akashic wizard}, \texttt{akashic dashboard}
     \item Contribute: extensions, data sources, visualizations, documentation
-    \item GitHub: github.com/elijah/akashic-civics
+    \item GitHub: \texttt{github.com/elijah/akashic-civics}
 \end{itemize}
+
+\slide{Questions \& Discussion}
+
+\begin{quote}
+What local decisions most need measurement in your community? Which data sources would you ship as extensions?  How can tools move from reporting injustice to changing it?
+\end{quote}
 
 \end{document}
