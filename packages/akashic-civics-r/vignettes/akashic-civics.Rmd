@@ -1,0 +1,96 @@
+---
+title: "Akashic Civics R Package"
+output: rmarkdown::html_vignette
+vignette: |
+  %\VignetteIndexEntry{Akashic Civics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 7, fig.height = 4)
+```
+
+## Overview
+
+The `akashic.civics` R package provides statistical methods for criminal justice
+disparity analysis. It includes functions for:
+
+- Descriptive statistics and disparity computation
+- Hypothesis testing (Z-tests, t-tests)
+- OLS and logistic regression
+- Doubly-robust causal estimation
+- Adaptive disconfirmation testing
+- Multi-jurisdiction comparison
+
+## Getting Started
+
+```{r}
+library(akashic.civics)
+```
+
+## Descriptive Statistics
+
+```{r}
+# Create sample case data
+cases <- data.frame(
+  race_ethnicity = rep(c("White", "Black", "Hispanic"), each = 100),
+  conviction = c(rbinom(100, 1, 0.60),
+                 rbinom(100, 1, 0.75),
+                 rbinom(100, 1, 0.65)),
+  sentence_months = c(rnorm(100, 24, 12),
+                      rnorm(100, 36, 18),
+                      rnorm(100, 30, 15))
+)
+
+# Compute descriptive statistics
+stats <- compute_descriptive_stats(cases)
+print(stats)
+```
+
+## Hypothesis Testing
+
+```{r}
+# Z-test comparing two proportions
+result <- run_z_test(0.60, 100, 0.75, 100)
+print(result)
+```
+
+## Regression Analysis
+
+```{r}
+# OLS regression
+ols_result <- run_ols_regression(cases,
+                                 outcome_col = "sentence_months",
+                                 predictors = c("race_ethnicity"))
+print(ols_result)
+```
+
+## Causal Inference
+
+```{r}
+# Doubly-robust estimation
+cases$treatment <- rbinom(nrow(cases), 1, 0.5)
+dr_result <- run_doubly_robust(cases,
+                                treatment_col = "treatment",
+                                outcome_col = "sentence_months",
+                                covariates = c("race_ethnicity"))
+print(dr_result)
+```
+
+## Multi-Jurisdiction Comparison
+
+```{r}
+cases$jurisdiction_id <- rep(c("CityA", "CityB", "CityC"), each = 100)
+comparison <- compare_jurisdictions(cases,
+                                     outcome_col = "sentence_months",
+                                     group_col = "race_ethnicity",
+                                     jurisdiction_col = "jurisdiction_id")
+print(comparison$summary)
+```
+
+## Export Results
+
+```{r}
+export_results(comparison, format = "json", file = "comparison.json")
+```

@@ -1,0 +1,7 @@
+^inst/
+^tests/testthat\.R$
+^DESCRIPTION\.draft$
+^README\.md$
+^LICENSE\.md$
+^._.*
+^\..*

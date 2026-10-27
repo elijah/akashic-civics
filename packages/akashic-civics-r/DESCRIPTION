@@ -1,17 +1,25 @@
 Package: akashic.civics
 Title: Akashic Civics R Package
-Version: 0.1.0
-Description: R wrapper for Akashic Civics criminal justice disparity analysis
+Version: 1.0.0
+Author: Akashic Civics Project
+Maintainer: Akashic Civics Project <elijah@example.com>
+Description: R package for criminal justice disparity analysis. Provides statistical methods for disparate impact analysis, sentencing disparity, trend monitoring, and causal inference. Includes doubly-robust estimation, OLS/logistic regression, adaptive disconfirmation testing, and multi-jurisdiction comparison.
 License: MIT
 Encoding: UTF-8
 LazyLoad: yes
 Roxygen: list(markdown = TRUE)
-
 Depends:
-    R (>= 3.5.0)
-
+    R (>= 4.0.0)
 Imports:
-    fastcheck
-
+    stats,
+    utils,
+    jsonlite,
+    MASS
 Suggests:
-    testthat
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown,
+    sandwich,
+    lmtest
+URL: https://github.com/elijah/akashic-civics
+BugReports: https://github.com/elijah/akashic-civics/issues
