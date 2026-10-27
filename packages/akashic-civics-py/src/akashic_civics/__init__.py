@@ -192,3 +192,14 @@ class DisparityAnalyzer:
 
 __version__ = '1.0.0'
 __all__ = ['DisparityAnalyzer']
+
+from .jupyter import (
+    AkashicMagics,
+    NotebookGenerator,
+    create_comparison_notebook,
+    display_disconfirmation_result,
+    display_generic_result,
+    load_ipython_extension,
+)
+
+__all__ = ['DisparityAnalyzer', 'AkashicMagics', 'NotebookGenerator', 'create_comparison_notebook', 'load_ipython_extension']

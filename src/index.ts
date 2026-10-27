@@ -9,5 +9,8 @@ export { OfficialsTracker } from './accountability';
 export { RedFlagReporter } from './reporting';
 export { DisparityVisualizer } from './visualization';
 export { AnalysisPipeline, AnalysisPipelineConfig, AnalysisPipelineResult } from './analysis';
+export { DataPipeline, dataPipeline, FBIUCRSource, BJSSource } from './data-sources';
+export type { FBICaseData, BJSDataPoint, DataFetchOptions, DataSourceConfig } from './data-sources';
+export { ExtensionRegistry, ExtensionError } from './extensions';
 
 export { AnalysisPipeline as default } from './analysis';
