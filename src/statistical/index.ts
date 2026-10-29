@@ -13,3 +13,4 @@ export * from './disconfirmation_philosophy';
 export * from './adaptive_disconfirmation';
 export * from './scoring_framework';
 export * from './documentation_generator';
+export * from './e_29_causal_impact';
