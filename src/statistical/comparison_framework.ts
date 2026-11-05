@@ -74,16 +74,42 @@ export function compareJurisdictionAgainstNational(
 }
 
 /**
- * Identifies peer groups based on demographic and case characteristics
- * @param {string} jurisdictionId - The jurisdiction to analyze
- * @returns {PeerGroupIdentification} - Groups of similar jurisdictions
- */
-export function identifyPeerGroups(
+   * Identifies peer groups based on demographic and case characteristics
+   * @param {string} jurisdictionId - The jurisdiction to analyze
+   * @returns {PeerGroupIdentification} - Groups of similar jurisdictions
+   */
+  export function identifyPeerGroups(
   baseline: EnhancedHistoricalBaseline,
   jurisdictionId: string
 ): PeerGroupIdentification {
-  const snapshots = baseline.getSnapshots(jurisdictionId) || [];
-  if (snapshots.length < 2) {
+  const snapshots = baseline.getAllSnapshots() || [];
+
+  if (snapshots.length === 0) {
+    return { peers: [] };
+  }
+
+  // Get unique jurisdictions with their most recent snapshot
+  const jurisdictionSnapshots = new Map<string, any>();
+  for (const snap of snapshots) {
+    const existing = jurisdictionSnapshots.get(snap.jurisdiction_id);
+    if (!existing || snap.timestamp > existing.timestamp) {
+      jurisdictionSnapshots.set(snap.jurisdiction_id, snap);
+    }
+  }
+
+  const jurisdictionList = Array.from(jurisdictionSnapshots.values());
+
+  if (jurisdictionList.length < 2) {
+    return { peers: [] };
+  }
+
+  // Optional: Remove the target jurisdiction from peer group analysis
+  // This ensures a jurisdiction doesn't group with itself
+  const filteredJurisdictions = jurisdictionList.filter(
+    snap => snap.jurisdiction_id !== jurisdictionId
+  );
+
+  if (filteredJurisdictions.length < 1) {
     return { peers: [] };
   }
 
@@ -104,7 +130,7 @@ export function identifyPeerGroups(
   }> = [];
 
   for (const bin of rateBins) {
-    const candidates = snapshots.filter(
+    const candidates = filteredJurisdictions.filter(
       (s: any) => s.key_statistics.conviction_rate >= bin[0] && s.key_statistics.conviction_rate <= bin[2]
     );
 

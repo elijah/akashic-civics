@@ -392,6 +392,14 @@ export class EnhancedHistoricalBaseline {
   }
 
   /**
+   * Get all snapshots across all jurisdictions
+   */
+  getAllSnapshots(): DataSnapshot[] {
+    return Array.from(this.snapshots.values())
+      .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+  }
+
+  /**
    * Get the most recent snapshot for a jurisdiction
    */
   getMostRecentSnapshot(jurisdictionId: string): DataSnapshot | null {
