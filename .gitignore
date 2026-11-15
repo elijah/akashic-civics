@@ -8,6 +8,10 @@ test_snapshots3/
 # Analysis output (generated data)
 analysis_output/
 
+# Memory profiling artifacts
+*.heapsnapshot
+Heap.*.heapsnapshot
+
 # Dependencies
 node_modules/
 

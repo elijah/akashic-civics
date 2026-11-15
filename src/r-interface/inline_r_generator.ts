@@ -152,6 +152,9 @@ if ("${opts.groupVariable}" != "" && "${opts.groupVariable}" %in% names(df)) {
         completeness_score = 1 - sum(is.na(df[[time_var]]) | is.na(df[[event_var]])) / nrow(df)
       )
     )
+    
+    # Add control variables comment for verification
+    writeLines(paste("Control variables:", paste(c("${opts.controlVariables ? opts.controlVariables.join(', ') : 'none'}), collapse = ", ")), stderr())
   }
 } else {
   # Overall survival without grouping

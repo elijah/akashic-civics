@@ -139,13 +139,24 @@ export class DataValidator {
 
     const missingRate = totalCells > 0 ? totalMissingCells / totalCells : 0;
 
-    // Check high missing rate
-    if (missingRate > this.config.maxMissingRate) {
+    // Analysis-specific missing rate: only count variables relevant to the analysis,
+    // excluding structural fields like id/jurisdiction_id which are always present.
+    const analysisVars = (requiredVars && requiredVars.length > 0) ? requiredVars : [];
+    let analysisMissingCells = 0;
+    let analysisTotalCells = 0;
+    for (const field of analysisVars) {
+      analysisMissingCells += fieldMissingCounts[field] || 0;
+      analysisTotalCells += cases.length;
+    }
+    const analysisMissingRate = analysisTotalCells > 0 ? analysisMissingCells / analysisTotalCells : 0;
+
+    // Check high missing rate based on analysis variables
+    if (analysisMissingRate > this.config.maxMissingRate) {
       issues.push({
         field: 'data_completeness',
-        message: `High missing data rate: ${Math.round(missingRate * 100)}% of required fields are missing. Consider imputation or data cleaning.`,
-        severity: missingRate > 0.8 ? 'error' : 'warning',
-        recommendedAction: missingRate > 0.8 ? 'abort' : 'impute'
+        message: `High missing data rate: ${Math.round(analysisMissingRate * 100)}% of analysis fields are missing. Consider imputation or data cleaning.`,
+        severity: analysisMissingRate > 0.8 ? 'error' : 'warning',
+        recommendedAction: analysisMissingRate > 0.8 ? 'abort' : 'impute'
       });
     }
 
@@ -176,11 +187,11 @@ export class DataValidator {
     const hasErrors = issues.some(i => i.severity === 'error');
     const valid = !hasErrors;
 
-    // Determine recommended action
+    // Determine recommended action based on analysis-specific missing rate
     let recommendedAction: 'proceed' | 'impute' | 'abort' = 'proceed';
     if (hasErrors) {
       recommendedAction = 'abort';
-    } else if (missingRate > 0.1) {
+    } else if (analysisMissingRate > 0.1) {
       recommendedAction = 'impute';
     }
 
